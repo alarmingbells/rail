@@ -1,0 +1,67 @@
+var CORRECT_PIN = 1234;
+
+onStart:
+    print "Welcome to SecureNotes.";
+end;
+
+main:
+    var pin;
+    var attempt;
+    var accessGranted;
+    assign accessGranted = 0;
+
+    while accessGranted = 0:
+        print "Enter your PIN:";
+        input;
+        assign attempt = #rxReadInput;
+        assign pin = attempt;
+
+        if pin = CORRECT_PIN:
+            assign accessGranted = 1;
+            print "Access granted.";
+        else:
+            print "Wrong PIN. Try again.";
+        end;
+    end;
+
+    print "Select an option:";
+    print "1. View notes";
+    print "2. Add note";
+    print "3. Exit";
+
+    var option;
+    var running;
+    assign running = 1;
+
+    while running = 1:
+        input;
+        assign option = #rxGetKey;
+
+        if option = 49: // ASCII '1'
+            call viewNotes;
+        else if option = 50: // ASCII '2'
+            call addNote;
+        else if option = 51: // ASCII '3'
+            print "Goodbye!";
+            #exit;
+        else:
+            print "Invalid option.";
+        end;
+    end;
+end;
+
+function viewNotes:
+    print "Retrieving stored notes...";
+    #rxShowNotes;
+    return;
+end;
+
+function addNote:
+    print "Enter your note:";
+    input;
+    var newNote;
+    assign newNote = #rxReadInput;
+    #rxSaveNote newNote;
+    print "Note saved.";
+    return;
+end;

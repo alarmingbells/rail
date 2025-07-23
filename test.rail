@@ -1,0 +1,5 @@
+main:
+    global var1 10;
+    global var2 100;
+    global var3 150;
+end;

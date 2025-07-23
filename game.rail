@@ -1,30 +1,26 @@
 main:
+    global lives 5;
+    global word (#rxReadInput);
+
     #print "Welcome to Hangman!\n";
     #print "Player 1: Input your secret word: ";
 
     #input;
 
-    var word;
-    assign word, (#rxReadInput);
+    #print "Pass the keyboard to player 2!\n";
+    #print "Press space when ready\n";
 
-    var lives;
-    assign lives, 5;
+    local pressed 0;
 
-    #print "Pass the keyboard to player 2!\n"
-    #print "Press space when ready\n"
-
-    var pressed;
-    assign pressed, 0;
     while pressed != 32:
-        assign pressed, (#rxGetKey);
+        assign pressed (#rxGetKey);
     end;
 
     while 1 = 1:
         #print("Input your guess: ");
         #input;
 
-        var playerInput;
-        assign playerInput, (#rxReadInput);
+        local playerInput (#rxReadInput);
 
         if (#getSize, playerInput) > 1:
             if playerInput == word:
@@ -32,11 +28,11 @@ main:
                 #exit;
             else;
         else:
-            var i;
-            var found;
+            local i 0;
+            local found 0;
             while i < (#getSize, word):
                 if playerInput == (word[i]):
-                    assign found, 1;
+                    assign found 1;
                     #print "There is a ";
                     #print playerInput;
                     #print " ";
@@ -44,14 +40,14 @@ main:
                     #print i;
                     #print "th position.\n";
                 end;
-                assign i, i + 1;
+                assign i i + 1;
             end;
 
             if found == 0:
                 #print "There is no ";
                 #print playerInput;
                 #print "!\n;
-                assign lives, lives - 1;
+                assign lives lives - 1;
                 if lives == 0:
                     #print "You loose! The word was "
                     #print word;

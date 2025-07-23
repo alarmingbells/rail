@@ -107,14 +107,18 @@ int parseToken(char *token) {
 
         if (strcmp(call, "assign") == 0) {
             if (argCount == 1) {
+                currentVarIdx = find_variable(stoken);
+            } else if (argCount == 2) {
                 char *endptr;
                 buffer = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
                     printf("\n\033[31mRail compile failure: expected integer value for 'assign', got '%s' at line %d\033[0m\n", stoken, line);
                     return -1;
                 }
-            } else if (argCount == 2) {
-                printf("A9 %02X 8D TP TP ", buffer);
+
+                printf("A9 %02X 8D ", buffer);
+                int addr = vars[find_variable(stoken)].address;
+                printf("%02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
             } else {
                 printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
                 return -1;
@@ -190,8 +194,15 @@ int main() {
     while (1) {
         newCall = 1;
         call[32];
-        line = 1;
+        line = 0;
         inMain = 0;
+        inFunc = 0;
+
+        currentVarIdx = 0;
+
+        argCount = 0;
+        buffer = 0;
+
         printf("\nRAIL>");
 
         char filename[500];

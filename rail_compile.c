@@ -12,7 +12,17 @@ int inFunc = 0;
 int currentVarIdx = 0;
 
 int argCount = 0;
+
 int buffer = 0;
+int buffer2 = 0;
+int buffer3 = 0;
+
+char cbuffer[32];
+char cbuffer2[32];
+
+char output[65536];
+char bytes[65536];
+int outputPos = 0;
 
 #define MAX_VARS 128
 
@@ -38,6 +48,37 @@ int find_variable(const char *name) {
         if (strcmp(vars[i].name, name) == 0) return i;
     }
     return -1;
+}
+
+int hexStringToByte(const char *hex) {
+    int byte;
+    sscanf(hex, "%2x", &byte);
+    return byte;
+}
+
+typedef struct Branch {
+    int parent;
+    int depth;
+    char loopCond[32];
+} Branch;
+
+#define MAX_BRANCHES 128
+Branch branches[MAX_BRANCHES];
+int branch_count = 0;
+int current_branch = -1;
+
+void branch() {
+    if (branch_count >= MAX_BRANCHES) return;
+    branches[branch_count].parent = current_branch;
+    branches[branch_count].depth = (current_branch == -1) ? 0 : branches[current_branch].depth + 1;
+    current_branch = branch_count;
+    branch_count++;
+}
+
+void unbranch() {
+    if (current_branch != -1) {
+        current_branch = branches[current_branch].parent;
+    }
 }
 
 const char *rxlib[] = {
@@ -77,20 +118,20 @@ int parseToken(char *token) {
                     }
                 }
                 if (found != -1) {
-                    printf("%s", rxlib[found+1]);
+                    outputPos += sprintf(output + outputPos, "%s", rxlib[found+1]);
                 } else {
                     printf("\n\033[31mRail compile failure: unknown system call '%s' at line %d\033[0m\n", call, line);
                     return -1;
                 }
             } else if (strcmp(call, "end") == 0) {
+                unbranch();
+            } else if (strcmp(call, "if") == 0) {
+            } else if (strcmp(call, "var") == 0) {
+            } else if (strcmp(call, "assign") == 0) {
             } else {
-                if ((strcmp(call, "global") == 0)) {
-                } else if ((strcmp(call, "assign") == 0)) {
-                } else {
-                    printf("\n\033[31mRail compile failure: unknown function or keyword '%s' at line %d\033[0m\n", call, line);
-                    return -1;
-                }                
-            }
+                printf("\n\033[31mRail compile failure: unknown function or keyword '%s' at line %d\033[0m\n", call, line);
+                return -1;
+            }                
         }
     } else {
         argCount++;
@@ -98,16 +139,20 @@ int parseToken(char *token) {
         char stoken[128];
 
         size_t len = strlen(token);
-        if (len > 0 && token[len - 1] == ';') {
-            strncpy(stoken, token, len - 1);
-            stoken[len - 1] = '\0';
-        } else {
-            strcpy(stoken, token);
+        while (len > 0 && (token[len - 1] == ';' || token[len - 1] == ':')) {
+            len--;
         }
+        strncpy(stoken, token, len);
+        stoken[len] = '\0';
+        
 
         if (strcmp(call, "assign") == 0) {
             if (argCount == 1) {
                 currentVarIdx = find_variable(stoken);
+                if (currentVarIdx == -1) {
+                    printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
             } else if (argCount == 2) {
                 char *endptr;
                 buffer = strtol(stoken, &endptr, 10);
@@ -116,33 +161,71 @@ int parseToken(char *token) {
                     return -1;
                 }
 
-                printf("A9 %02X 8D ", buffer);
+                outputPos += sprintf(output + outputPos, "A9 %02X 8D ", buffer);
                 int addr = vars[find_variable(stoken)].address;
-                printf("%02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "%02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
             } else {
                 printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
                 return -1;
             }
-        } else if (strcmp(call, "global") == 0) {
+        } else if (strcmp(call, "var") == 0) {
             if (argCount == 1) {
                 if (find_variable(stoken) == -1) {
                     currentVarIdx = add_variable(stoken);
                 } else {
-                    printf("\n\033[31mRail compile failure: global name '%s' already in use at line %d\033[0m\n", stoken, line);
+                    printf("\n\033[31mRail compile failure: variable name '%s' already in use at line %d\033[0m\n", stoken, line);
                     return -1;
                 }
             } else if (argCount == 2) {
                 char *endptr;
                 int value = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    printf("\n\033[31mRail compile failure: expected integer value for 'global', got '%s' at line %d\033[0m\n", stoken, line);
+                    printf("\n\033[31mRail compile failure: expected integer value for 'var', got '%s' at line %d\033[0m\n", stoken, line);
                     return -1;
                 }
-                printf("A9 %02X 8D ", value);
-                printf("%02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "A9 %02X 8D ", value);
+                outputPos += sprintf(output + outputPos, "%02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
             } else {
                 printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
                 return -1;
+            }
+        } else if (strcmp(call, "if") == 0) {
+            if (argCount == 1) {
+                char *endptr;
+                buffer = strtol(stoken, &endptr, 10);
+                strcpy(cbuffer2, "A9");
+                if (*endptr != '\0') {
+                    int varIdx = find_variable(stoken);
+                    if (varIdx != -1) {
+                        strcpy(cbuffer, "AD");
+                        buffer = vars[varIdx].address;
+                    } else {
+                        printf("\n\033[31mRail compile failure: expected integer or variable for 'if', got '%s' at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                }
+            } else if (argCount == 2) {
+                if (strcmp(stoken, "==") == 0) {
+                    buffer2 = 1;
+                } else {
+                    printf("\n\033[31mRail compile failure: unexpected token '%s' at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
+            } else if (argCount == 3) {
+                char *endptr;
+                buffer3 = strtol(stoken, &endptr, 10);
+                strcpy(cbuffer2, "C9");
+                if (*endptr != '\0') {
+                    int varIdx = find_variable(stoken);
+                    if (varIdx != -1) {
+                        strcpy(cbuffer2, "CD");
+                        buffer3 = vars[varIdx].address;
+                    } else {
+                        printf("\n\033[31mRail compile failure: expected integer or variable for 'if', got '%s' at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                }
+                outputPos += sprintf(output + outputPos, "");
             }
         }
     }
@@ -153,7 +236,7 @@ int parseToken(char *token) {
     return 0;
 }
 
-void compile(char *code) {
+int compile(char *code) {
     char token[128];
     int tokenIdx = 0;
     int inString = 0;
@@ -171,7 +254,7 @@ void compile(char *code) {
         } else if (isspace(ch) && !inString) {
             if (tokenIdx > 0) {
                 token[tokenIdx] = '\0';
-                if (parseToken(token) == -1) return;
+                if (parseToken(token) == -1) return -1;
                 tokenIdx = 0;
             }
         } else {
@@ -186,6 +269,7 @@ void compile(char *code) {
         parseToken(token);
     }
     printf("\n\033[32mFile compiled successfully.\033[0m\n");
+    return 0;
 }
 
 int main() {
@@ -201,7 +285,18 @@ int main() {
         currentVarIdx = 0;
 
         argCount = 0;
+
         buffer = 0;
+        buffer2 = 0;
+        buffer3 = 0;
+
+        memset(output, 0, sizeof(output));
+        memset(bytes, 0, sizeof(bytes));
+        outputPos = 0;
+
+        var_count = 0;
+        next_heap_addr = 0x0200;
+        memset(vars, 0, sizeof(vars));
 
         printf("\nRAIL>");
 
@@ -230,7 +325,26 @@ int main() {
                 content[bytesRead] = '\0';
                 fclose(file);
                 printf("\nStarting build of file '%s'...\n", filename);
-                compile(content);
+
+                int sucess = compile(content);
+                
+                if (sucess == 0) {
+                    printf("%s\n", output);
+
+                    int outputSize = 0;
+                    FILE *binary = fopen("compiled.bin", "wb");
+
+                    for (int i = 0; i < (int)strlen(output); i += 3) {
+                        char hex[3] = {0};
+                        if (output[i] == ' ' || output[i] == '\0' || output[i] == '\n') continue;
+                        hex[0] = output[i];
+                        hex[1] = output[i+1];
+                        int byte = hexStringToByte(hex);
+                        bytes[outputSize++] = (unsigned char)byte;
+                    }
+                    fwrite(bytes, 1, outputSize, binary);
+                    fclose(binary);
+                }
                 free(content);
             } else {
                 printf("\n\033[31mFile open failure: memory allocation failure. Please try again\033[0m\n");
@@ -239,7 +353,7 @@ int main() {
         } else {
             printf("\n\033[31mFile open failure: file '%s' was not found\033[0m\n", filename);
         }
-        printf("Compilation finished.\n", filename);
+        printf("Compilation finished.\n", filename); 
     }
 
     return 0;

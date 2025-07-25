@@ -1,6 +1,6 @@
 main:
-    global lives 5;
-    global word (#rxReadInput);
+    var lives 5;
+    var word (#rxReadInput);
 
     #print "Welcome to Hangman!\n";
     #print "Player 1: Input your secret word: ";
@@ -10,7 +10,7 @@ main:
     #print "Pass the keyboard to player 2!\n";
     #print "Press space when ready\n";
 
-    local pressed 0;
+    var pressed 0;
 
     while pressed != 32:
         assign pressed (#rxGetKey);
@@ -20,7 +20,7 @@ main:
         #print("Input your guess: ");
         #input;
 
-        local playerInput (#rxReadInput);
+        var playerInput (#rxReadInput);
 
         if (#getSize, playerInput) > 1:
             if playerInput == word:
@@ -28,8 +28,8 @@ main:
                 #exit;
             else;
         else:
-            local i 0;
-            local found 0;
+            var i 0;
+            var found 0;
             while i < (#getSize, word):
                 if playerInput == (word[i]):
                     assign found 1;

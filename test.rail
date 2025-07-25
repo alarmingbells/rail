@@ -1,7 +1,11 @@
 main:
-    global var1 1;
-    global var2 2;
-    global var3 3;
+    var var1 1;
+    var var2 2;
+    var var3 3;
 
     assign var2 8;
+
+    if var2 == 8:
+        #input;
+    end;
 end;

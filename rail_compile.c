@@ -2,12 +2,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdbool.h>
 
-int newCall = 1;
+bool newCall = true;
 char call[32];
 int line = 0;
-int inMain = 0;
-int inFunc = 0;
+bool inMain = false;
+bool inFunc = false;
 
 int currentVarIdx = 0;
 
@@ -19,6 +20,7 @@ int buffer3 = 0;
 
 char cbuffer[32];
 char cbuffer2[32];
+char cbuffer3[32];
 
 char output[65536];
 char bytes[65536];
@@ -59,7 +61,8 @@ int hexStringToByte(const char *hex) {
 typedef struct Branch {
     int parent;
     int depth;
-    char loopCond[32];
+    int type;
+    int bytePos;
 } Branch;
 
 #define MAX_BRANCHES 128
@@ -67,16 +70,26 @@ Branch branches[MAX_BRANCHES];
 int branch_count = 0;
 int current_branch = -1;
 
-void branch() {
+void branch(type, position) {
     if (branch_count >= MAX_BRANCHES) return;
     branches[branch_count].parent = current_branch;
     branches[branch_count].depth = (current_branch == -1) ? 0 : branches[current_branch].depth + 1;
+    branches[branch_count].type = type;
+    branches[branch_count].bytePos = position;
     current_branch = branch_count;
     branch_count++;
 }
 
 void unbranch() {
     if (current_branch != -1) {
+        int xxPos = (branches[current_branch].bytePos-1)*3;
+        int distance = (outputPos/3) - branches[current_branch].bytePos + 1;
+        char jhCode[2];
+        sprintf(jhCode, "%02X", distance & 0xFF);
+
+        output[xxPos] = jhCode[0];
+        output[xxPos + 1] = jhCode[1];
+
         current_branch = branches[current_branch].parent;
     }
 }
@@ -85,12 +98,12 @@ const char *rxlib[] = {
     "print",
     "A9 01 AE TP TP A0 TP 20 00 FF ", // pointer to string, length of string
     "input",
-    "A9 02 20 00 FF"
+    "A9 02 20 00 FF "
 };
 
 int parseToken(char *token) {
     if (newCall) {
-        newCall = 0;
+        newCall = false;
 
         size_t len = strlen(token);
         if (len > 0 && token[len - 1] == ';') {
@@ -101,11 +114,11 @@ int parseToken(char *token) {
         }
 
         if (strncmp(call, "main", 4) == 0) {
-            inMain = 1;
+            inMain = true;
         } else {
             if (!inMain) {
                 if (strcmp(call, "function") == 0) {
-                    inFunc = 1;
+                    inFunc = true;
                 }
                 printf("\033[31mRail compile failure: call outside of main or function at line %d\033[0m\n", line);
                 return -1;
@@ -124,10 +137,12 @@ int parseToken(char *token) {
                     return -1;
                 }
             } else if (strcmp(call, "end") == 0) {
-                unbranch();
+                unbranch(); 
             } else if (strcmp(call, "if") == 0) {
             } else if (strcmp(call, "var") == 0) {
             } else if (strcmp(call, "assign") == 0) {
+            } else if (strcmp(call, "addto") == 0) {
+            } else if (strcmp(call, "subfrom") == 0) {
             } else {
                 printf("\n\033[31mRail compile failure: unknown function or keyword '%s' at line %d\033[0m\n", call, line);
                 return -1;
@@ -144,7 +159,6 @@ int parseToken(char *token) {
         }
         strncpy(stoken, token, len);
         stoken[len] = '\0';
-        
 
         if (strcmp(call, "assign") == 0) {
             if (argCount == 1) {
@@ -168,6 +182,7 @@ int parseToken(char *token) {
                 printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
                 return -1;
             }
+
         } else if (strcmp(call, "var") == 0) {
             if (argCount == 1) {
                 if (find_variable(stoken) == -1) {
@@ -189,11 +204,12 @@ int parseToken(char *token) {
                 printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
                 return -1;
             }
+
         } else if (strcmp(call, "if") == 0) {
             if (argCount == 1) {
                 char *endptr;
                 buffer = strtol(stoken, &endptr, 10);
-                strcpy(cbuffer2, "A9");
+                strcpy(cbuffer3, "A9");
                 if (*endptr != '\0') {
                     int varIdx = find_variable(stoken);
                     if (varIdx != -1) {
@@ -207,6 +223,7 @@ int parseToken(char *token) {
             } else if (argCount == 2) {
                 if (strcmp(stoken, "==") == 0) {
                     buffer2 = 1;
+                    strcpy(cbuffer2, "D0");
                 } else {
                     printf("\n\033[31mRail compile failure: unexpected token '%s' at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -214,23 +231,80 @@ int parseToken(char *token) {
             } else if (argCount == 3) {
                 char *endptr;
                 buffer3 = strtol(stoken, &endptr, 10);
-                strcpy(cbuffer2, "C9");
+                strcpy(cbuffer3, "C9");
                 if (*endptr != '\0') {
                     int varIdx = find_variable(stoken);
                     if (varIdx != -1) {
-                        strcpy(cbuffer2, "CD");
+                        strcpy(cbuffer3, "CD");
                         buffer3 = vars[varIdx].address;
                     } else {
                         printf("\n\033[31mRail compile failure: expected integer or variable for 'if', got '%s' at line %d\033[0m\n", stoken, line);
                         return -1;
                     }
                 }
-                outputPos += sprintf(output + outputPos, "");
+
+                outputPos += sprintf(output + outputPos, "%s %02X %02X ", cbuffer, buffer & 0xFF, (buffer >> 8) & 0xFF);
+                if (strcmp(cbuffer3, "CD") == 0) {
+                    outputPos += sprintf(output + outputPos, "%s %02X %02X ", cbuffer3, buffer3 & 0xFF, (buffer3 >> 8) & 0xFF);
+                } else if (strcmp(cbuffer3, "C9") == 0) {
+                    outputPos += sprintf(output + outputPos, "%s %02X ", cbuffer3, buffer3 & 0xFF);
+                }
+                outputPos += sprintf(output + outputPos, "%s XX ", cbuffer2);
+
+                branch(1, outputPos/3);
+            } else {
+                printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
+                return -1;
+            }
+
+        } else if (strcmp(call, "addto") == 0) {
+            if (argCount == 1) {
+                int variable = find_variable(stoken);
+                if (variable == -1) {
+                    printf("\n\033[31mRail compile failure: invalid variable name '%s' for 'addto' at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
+                buffer = vars[variable].address;
+            } else if (argCount == 2) {
+                char *endptr;
+                buffer2 = strtol(stoken, &endptr, 10);
+                if (*endptr != '\0') {
+                    printf("\n\033[31mRail compile failure: expected integer value for 'addto', got '%s' at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
+                outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "69 %02X ", buffer2 & 0xFF);
+                outputPos += sprintf(output + outputPos, "8D %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+            } else {
+                printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
+                return -1;
+            }
+        } else if (strcmp(call, "subfrom") == 0) {
+            if (argCount == 1) {
+                int variable = find_variable(stoken);
+                if (variable == -1) {
+                    printf("\n\033[31mRail compile failure: invalid variable name '%s' for 'subfrom' at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
+                buffer = vars[variable].address;
+            } else if (argCount == 2) {
+                char *endptr;
+                buffer2 = strtol(stoken, &endptr, 10);
+                if (*endptr != '\0') {
+                    printf("\n\033[31mRail compile failure: expected integer value for 'subfrom', got '%s' at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
+                outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "E9 %02X ", buffer2 & 0xFF);
+                outputPos += sprintf(output + outputPos, "8D %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+            } else {
+                printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
+                return -1;
             }
         }
     }
     if (token[strlen(token)-1] == ';' || token[strlen(token)-1] == ':') {
-        newCall = 1;
+        newCall = true;
         argCount = 0;
     }
     return 0;
@@ -268,18 +342,22 @@ int compile(char *code) {
         token[tokenIdx] = '\0';
         parseToken(token);
     }
-    printf("\n\033[32mFile compiled successfully.\033[0m\n");
-    return 0;
+    if (current_branch == -1) {
+        printf("\n\033[32mFile compiled successfully.\033[0m\n");
+        return 0;
+    }
+    printf("\n\033[31mRail compile failure: %d branch(es) unclosed at line %d\033[0m\n", current_branch+1, line);
+    return -1;
 }
 
 int main() {
     printf("Rail Compiler version [0.1]\n");
     printf("Copyright (c) me 2025. All rights reserved.\n");
     while (1) {
-        newCall = 1;
+        newCall = true;
         call[32];
         line = 0;
-        inMain = 0;
+        inMain = false;
         inFunc = 0;
 
         currentVarIdx = 0;
@@ -297,6 +375,9 @@ int main() {
         var_count = 0;
         next_heap_addr = 0x0200;
         memset(vars, 0, sizeof(vars));
+
+        branch_count = 0;
+        current_branch = -1;
 
         printf("\nRAIL>");
 

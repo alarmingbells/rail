@@ -6,6 +6,11 @@ main:
     assign var2 8;
 
     if var2 == 8:
-        #input;
+        if var1 == 1:
+            #input
+        end;
     end;
+
+    addto var3 4;
+    subfrom var2 7;
 end;

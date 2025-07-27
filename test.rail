@@ -1,3 +1,24 @@
+/
+int main() {
+    int var1 = 1;
+    int var2 = 2;
+    int var3 = 3;
+
+    var2 = 8;
+
+    if (var2 == 8) {
+        if (var1 == 1) {
+            input();
+        }
+    }
+    
+    var3 += 3;
+    var2 -=7
+
+    return 0;
+}
+/
+
 main:
     var var1 1;
     var var2 2;

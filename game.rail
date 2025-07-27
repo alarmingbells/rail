@@ -1,6 +1,6 @@
 main:
     var lives 5;
-    var word (#rxReadInput);
+    var word (#ReadInput);
 
     #print "Welcome to Hangman!\n";
     #print "Player 1: Input your secret word: ";

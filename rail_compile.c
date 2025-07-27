@@ -7,6 +7,7 @@
 bool newCall = true;
 char call[32];
 int line = 0;
+
 bool inMain = false;
 bool inFunc = false;
 
@@ -39,9 +40,11 @@ int next_heap_addr = 0x0200;
 
 int add_variable(const char *name) {
     if (var_count >= MAX_VARS) return -1;
+
     strncpy(vars[var_count].name, name, sizeof(vars[var_count].name) - 1);
     vars[var_count].name[sizeof(vars[var_count].name) - 1] = '\0';
     vars[var_count].address = next_heap_addr++;
+
     return var_count++;
 }
 
@@ -49,12 +52,14 @@ int find_variable(const char *name) {
     for (int i = 0; i < var_count; i++) {
         if (strcmp(vars[i].name, name) == 0) return i;
     }
+
     return -1;
 }
 
 int hexStringToByte(const char *hex) {
     int byte;
     sscanf(hex, "%2x", &byte);
+
     return byte;
 }
 
@@ -72,6 +77,7 @@ int current_branch = -1;
 
 void branch(type, position) {
     if (branch_count >= MAX_BRANCHES) return;
+
     branches[branch_count].parent = current_branch;
     branches[branch_count].depth = (current_branch == -1) ? 0 : branches[current_branch].depth + 1;
     branches[branch_count].type = type;
@@ -95,8 +101,6 @@ void unbranch() {
 }
 
 const char *rxlib[] = {
-    "print",
-    "A9 01 AE TP TP A0 TP 20 00 FF ", // pointer to string, length of string
     "input",
     "A9 02 20 00 FF "
 };
@@ -119,9 +123,10 @@ int parseToken(char *token) {
             if (!inMain) {
                 if (strcmp(call, "function") == 0) {
                     inFunc = true;
+                } else {
+                    printf("\033[31mRail compile failure: call '%s' outside of main or function at line %d\033[0m\n", call, line);
+                    return -1;
                 }
-                printf("\033[31mRail compile failure: call outside of main or function at line %d\033[0m\n", line);
-                return -1;
             } else if (call[0] == '#') {
                 int found = -1;
                 for (size_t i = 0; i < sizeof(rxlib) / sizeof(rxlib[0]); i++) {
@@ -133,7 +138,7 @@ int parseToken(char *token) {
                 if (found != -1) {
                     outputPos += sprintf(output + outputPos, "%s", rxlib[found+1]);
                 } else {
-                    printf("\n\033[31mRail compile failure: unknown system call '%s' at line %d\033[0m\n", call, line);
+                    printf("\n\033[31mRail compile failure: '%s' is not a valid function at line %d\033[0m\n", call, line);
                     return -1;
                 }
             } else if (strcmp(call, "end") == 0) {
@@ -144,7 +149,7 @@ int parseToken(char *token) {
             } else if (strcmp(call, "addto") == 0) {
             } else if (strcmp(call, "subfrom") == 0) {
             } else {
-                printf("\n\033[31mRail compile failure: unknown function or keyword '%s' at line %d\033[0m\n", call, line);
+                printf("\n\033[31mRail compile failure: unknown keyword '%s' at line %d\033[0m\n", call, line);
                 return -1;
             }                
         }
@@ -313,19 +318,23 @@ int parseToken(char *token) {
 int compile(char *code) {
     char token[128];
     int tokenIdx = 0;
-    int inString = 0;
+
+    bool inString = false;
+    bool inComment = false;
 
     for (int c = 0; c < strlen(code); c++) {
         char ch = code[c];
 
         if (ch == '\n') line++;
+        if (ch == '/') {inComment = !inComment; continue;}
+        if (inComment) continue;
 
         if (ch == '"') {
             inString = !inString;
             if (tokenIdx < (int)sizeof(token) - 1) {
                 token[tokenIdx++] = ch;
             }
-        } else if (isspace(ch) && !inString) {
+        } else if (isspace(ch) && !inString && !inComment) {
             if (tokenIdx > 0) {
                 token[tokenIdx] = '\0';
                 if (parseToken(token) == -1) return -1;
@@ -351,31 +360,25 @@ int compile(char *code) {
 }
 
 int main() {
-    printf("Rail Compiler version [0.1]\n");
-    printf("Copyright (c) me 2025. All rights reserved.\n");
-    while (1) {
+    printf("Rail Compiler for MOS 6502\n");
+    printf("Copyright (C) Innovation Incorporated 2025. All rights reserved.\n");
+    while (true) {
         newCall = true;
         call[32];
         line = 0;
         inMain = false;
         inFunc = 0;
-
         currentVarIdx = 0;
-
         argCount = 0;
-
         buffer = 0;
         buffer2 = 0;
         buffer3 = 0;
-
-        memset(output, 0, sizeof(output));
-        memset(bytes, 0, sizeof(bytes));
         outputPos = 0;
-
         var_count = 0;
         next_heap_addr = 0x0200;
         memset(vars, 0, sizeof(vars));
-
+        memset(output, 0, sizeof(output));
+        memset(bytes, 0, sizeof(bytes));
         branch_count = 0;
         current_branch = -1;
 

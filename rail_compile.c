@@ -419,6 +419,7 @@ int main() {
                 int sucess = compile(content);
                 
                 if (sucess == 0) {
+                    
                     char compFileName[32];
                     for (int i = 0; i < strlen(filename); i++) {
                         if (filename[i] == '.') {
@@ -428,7 +429,7 @@ int main() {
                         compFileName[i] = filename[i];
                     }
                     strcat(compFileName, ".bin");
-                    
+
                     printf("%s\n", output);
 
                     int outputSize = 0;

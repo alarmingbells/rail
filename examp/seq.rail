@@ -1,0 +1,50 @@
+/
+#include <stdio.h>
+int main() {
+
+  int i, n;
+
+  int t1 = 0, t2 = 1;
+
+  int nextTerm = t1 + t2;
+
+  printf("Enter the number of terms: ");
+  scanf("%d", &n);
+
+  printf("Fibonacci Series: %d, %d, ", t1, t2);
+
+  for (i = 3; i <= n; ++i) {
+    printf("%d, ", nextTerm);
+    t1 = t2;
+    t2 = nextTerm;
+    nextTerm = t1 + t2;
+  }
+
+  return 0;
+}
+/
+
+main:
+    var i 0;
+    var n 0;
+
+    var t1 0;
+    var t2 0;
+
+    var nextTerm (t1 + t2);
+    #print "Enter the number of terms: ";
+
+    var terms (#readInput);
+
+    #print "Fibonacci sequence: ";
+
+    while i < terms:
+        #printn nextTerm;
+
+        copy t1 t2;
+        copy t2 nextTerm;
+        copy nextTerm (t1 + t2);
+
+        addto i 1;
+    end;
+end;

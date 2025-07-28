@@ -27,8 +27,8 @@ main:
     assign var2 8;
 
     if var2 == 8:
-        if var1 == 1:
-            #input
+        if var1 != 2:
+            #input;
         end;
     end;
 

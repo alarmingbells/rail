@@ -89,7 +89,7 @@ void branch(type, position) {
 void unbranch() {
     if (current_branch != -1) {
         int xxPos = (branches[current_branch].bytePos-1)*3;
-        int distance = (outputPos/3) - branches[current_branch].bytePos + 1;
+        int distance = (outputPos/3) - branches[current_branch].bytePos;
         char jhCode[2];
         sprintf(jhCode, "%02X", distance & 0xFF);
 
@@ -229,6 +229,9 @@ int parseToken(char *token) {
                 if (strcmp(stoken, "==") == 0) {
                     buffer2 = 1;
                     strcpy(cbuffer2, "D0");
+                } else if (strcmp(stoken, "!=") == 0) {
+                    buffer2 = 2;
+                    strcpy(cbuffer2, "F0");
                 } else {
                     printf("\n\033[31mRail compile failure: unexpected token '%s' at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -306,6 +309,9 @@ int parseToken(char *token) {
                 printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
                 return -1;
             }
+        } else {
+            printf("\n\033[31mRail compile failure: expected ';' before '%s' at line %d\033[0m\n", stoken, line);
+            return -1;
         }
     }
     if (token[strlen(token)-1] == ';' || token[strlen(token)-1] == ':') {
@@ -413,10 +419,20 @@ int main() {
                 int sucess = compile(content);
                 
                 if (sucess == 0) {
+                    char compFileName[32];
+                    for (int i = 0; i < strlen(filename); i++) {
+                        if (filename[i] == '.') {
+                            compFileName[i] = '\0';
+                            break;
+                        }
+                        compFileName[i] = filename[i];
+                    }
+                    strcat(compFileName, ".bin");
+                    
                     printf("%s\n", output);
 
                     int outputSize = 0;
-                    FILE *binary = fopen("compiled.bin", "wb");
+                    FILE *binary = fopen(compFileName, "wb");
 
                     for (int i = 0; i < (int)strlen(output); i += 3) {
                         char hex[3] = {0};

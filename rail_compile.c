@@ -10,6 +10,7 @@ int line = 0;
 
 bool inMain = false;
 bool inFunc = false;
+bool inNest = false;
 
 int currentVarIdx = 0;
 
@@ -86,8 +87,11 @@ void branch(type, position) {
     branch_count++;
 }
 
-void unbranch() {
+void unbranch(isElse) {
     if (current_branch != -1) {
+        if (isElse) {
+            outputPos += sprintf(output + outputPos, "A9 01 C9 01 F0 XX");
+        }
         int xxPos = (branches[current_branch].bytePos-1)*3;
         int distance = (outputPos/3) - branches[current_branch].bytePos;
         char jhCode[2];
@@ -97,6 +101,8 @@ void unbranch() {
         output[xxPos + 1] = jhCode[1];
 
         current_branch = branches[current_branch].parent;
+
+        if (isElse) branch(1, outputPos/3);
     }
 }
 
@@ -142,7 +148,9 @@ int parseToken(char *token) {
                     return -1;
                 }
             } else if (strcmp(call, "end") == 0) {
-                unbranch(); 
+                unbranch(false);
+            } else if (strcmp(call, "else") == 0) {
+                unbranch(true);
             } else if (strcmp(call, "if") == 0) {
             } else if (strcmp(call, "var") == 0) {
             } else if (strcmp(call, "assign") == 0) {
@@ -334,6 +342,31 @@ int compile(char *code) {
         if (ch == '\n') line++;
         if (ch == '/') {inComment = !inComment; continue;}
         if (inComment) continue;
+
+        if (ch == '(') {
+            if (!newCall) {
+                inNest = true;
+
+                int nestBuffer = buffer;
+                int nestBuffer2 = buffer2;
+                int nestBuffer3 = buffer3;
+
+                char nestCBuffer[32];
+                char nestCBuffer2[32];
+                char nestCBuffer3[32];
+                strcpy(nestCBuffer, cbuffer);
+                strcpy(nestCBuffer2, cbuffer2);
+                strcpy(nestCBuffer3, cbuffer3);
+
+                char nestCall[32];
+                strcpy(nestCall, call);
+                newCall = true;
+
+                int nestArgCount = argCount;
+            } else {
+                printf("\n\033[31mRail compile failure: unexpected '(' at line %d\033[0m\n", line);
+            }
+        }
 
         if (ch == '"') {
             inString = !inString;

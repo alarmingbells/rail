@@ -11,10 +11,13 @@ int line = 0;
 bool inMain = false;
 bool inFunc = false;
 bool inNest = false;
+bool isFunc = false;
 
 int currentVarIdx = 0;
 
 int argCount = 0;
+
+char funcCallBuffer[32];
 
 int buffer = 0;
 int buffer2 = 0;
@@ -89,9 +92,6 @@ void branch(type, position) {
 
 void unbranch(isElse) {
     if (current_branch != -1) {
-        if (isElse) {
-            outputPos += sprintf(output + outputPos, "A9 01 C9 01 F0 XX");
-        }
         int xxPos = (branches[current_branch].bytePos-1)*3;
         int distance = (outputPos/3) - branches[current_branch].bytePos;
         char jhCode[2];
@@ -102,13 +102,18 @@ void unbranch(isElse) {
 
         current_branch = branches[current_branch].parent;
 
-        if (isElse) branch(1, outputPos/3);
+        if (isElse) {
+            outputPos += sprintf(output + outputPos, "A9 01 C9 01 F0 XX ");
+            branch(1, outputPos/3);
+        }
     }
 }
 
 const char *rxlib[] = {
     "input",
-    "A9 02 20 00 FF "
+    "A9 02 20 00 FF ",
+    "print",
+    "A9 01 20 00 FF "
 };
 
 int parseToken(char *token) {
@@ -120,8 +125,14 @@ int parseToken(char *token) {
             strncpy(call, token, len - 1);
             call[len - 1] = '\0';
         } else {
-            strcpy(call, token);
+            if (len > 0 && token[len - 1] == ':') {
+                strncpy(call, token, len - 1);
+                call[len - 1] = '\0';
+            } else {
+                strcpy(call, token);
+            }
         }
+
 
         if (strncmp(call, "main", 4) == 0) {
             inMain = true;
@@ -134,6 +145,7 @@ int parseToken(char *token) {
                     return -1;
                 }
             } else if (call[0] == '#') {
+                isFunc = true;
                 int found = -1;
                 for (size_t i = 0; i < sizeof(rxlib) / sizeof(rxlib[0]); i++) {
                     if (strcmp(call + 1, rxlib[i]) == 0) {
@@ -142,7 +154,7 @@ int parseToken(char *token) {
                     }
                 }
                 if (found != -1) {
-                    outputPos += sprintf(output + outputPos, "%s", rxlib[found+1]);
+                    strcpy(funcCallBuffer, rxlib[found+1]);
                 } else {
                     printf("\n\033[31mRail compile failure: '%s' is not a valid function at line %d\033[0m\n", call, line);
                     return -1;
@@ -240,6 +252,9 @@ int parseToken(char *token) {
                 } else if (strcmp(stoken, "!=") == 0) {
                     buffer2 = 2;
                     strcpy(cbuffer2, "F0");
+                } else if (strcmp(stoken, ">=") == 0) {
+                    buffer2 = 3;
+                    strcpy(cbuffer2, "B0");
                 } else {
                     printf("\n\033[31mRail compile failure: unexpected token '%s' at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -317,13 +332,16 @@ int parseToken(char *token) {
                 printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
                 return -1;
             }
+        } else if (isFunc) {
         } else {
             printf("\n\033[31mRail compile failure: expected ';' before '%s' at line %d\033[0m\n", stoken, line);
             return -1;
         }
     }
     if (token[strlen(token)-1] == ';' || token[strlen(token)-1] == ':') {
+        if (isFunc) outputPos += sprintf(output + outputPos, "%s", funcCallBuffer);
         newCall = true;
+        isFunc = false;
         argCount = 0;
     }
     return 0;
@@ -333,8 +351,10 @@ int compile(char *code) {
     char token[128];
     int tokenIdx = 0;
 
-    bool inString = false;
+    int strPos = 0;
+
     bool inComment = false;
+    bool inString = false;
 
     for (int c = 0; c < strlen(code); c++) {
         char ch = code[c];
@@ -342,6 +362,22 @@ int compile(char *code) {
         if (ch == '\n') line++;
         if (ch == '/') {inComment = !inComment; continue;}
         if (inComment) continue;
+
+        if (ch == '"') {
+            inString = !inString;
+            if (!inString) parseToken("str");
+            strPos = 0;
+            continue;
+        }
+
+        if (inString) {
+            if (strPos > 31) {
+                printf("\n\033[31mRail compile failure: string exceeds 32 byte buffer limit at line %d\033[0m\n", line);
+                return -1;
+            }
+            outputPos += sprintf(output + outputPos, "A9 %02X 85 %02X ", (unsigned char)ch, 224 + strPos);
+            strPos++;
+        }
 
         if (ch == '(') {
             if (!newCall) {
@@ -365,15 +401,11 @@ int compile(char *code) {
                 int nestArgCount = argCount;
             } else {
                 printf("\n\033[31mRail compile failure: unexpected '(' at line %d\033[0m\n", line);
+                return -1;
             }
         }
 
-        if (ch == '"') {
-            inString = !inString;
-            if (tokenIdx < (int)sizeof(token) - 1) {
-                token[tokenIdx++] = ch;
-            }
-        } else if (isspace(ch) && !inString && !inComment) {
+        if (isspace(ch) && !inComment && !inString) {
             if (tokenIdx > 0) {
                 token[tokenIdx] = '\0';
                 if (parseToken(token) == -1) return -1;
@@ -406,7 +438,8 @@ int main() {
         call[32];
         line = 0;
         inMain = false;
-        inFunc = 0;
+        inFunc = false;
+        isFunc = false;
         currentVarIdx = 0;
         argCount = 0;
         buffer = 0;

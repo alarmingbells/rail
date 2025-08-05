@@ -1,3 +1,4 @@
-0000 - 00FF - zero page
+0000 - 00E0 - zero page
+00E0 - 00FF - string buffer
 0100 - 01FF - hardware stack
 0200 - 05FF - rx heap

@@ -1,11 +1,12 @@
 main:
     var lives 5;
-    var word (#ReadInput);
 
-    #print "Welcome to Hangman!\n";
-    #print "Player 1: Input your secret word: ";
+    #print "Welcome to Hangman!";
+    #print "Input secret word:";
 
     #input;
+
+    var word (#ReadInput);
 
     #print "Pass the keyboard to player 2!\n";
     #print "Press space when ready\n";

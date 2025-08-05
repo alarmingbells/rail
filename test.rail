@@ -1,5 +1,6 @@
 main:
-    var var1 (#readInput;);
+    var var1 100;
+    var var2 150;
 
-    assign var1 (#readInput;);
+    assign var1 (var2 + var1;);
 end;

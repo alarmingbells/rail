@@ -1,17 +1,5 @@
 main:
-    var lives 100;
+    var var1 (#readInput;);
 
-    #print "Welcome to Test!";
-    #print "Input a secret:";
-    #input;
-
-    if lives >= 50:
-        subfrom lives 1;
-        #print "You had too many lives,";
-        #print " one was removed.";
-    else:
-        addto lives 1;
-        #print "You had too few lives,";
-        #print " one was given to you.";
-    end;
+    assign var1 (#readInput;);
 end;

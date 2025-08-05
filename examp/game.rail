@@ -6,24 +6,24 @@ main:
 
     #input;
 
-    var word (#ReadInput);
+    var word (#readInput;);
 
     #print "Pass the keyboard to player 2!\n";
     #print "Press space when ready\n";
 
     var pressed 0;
 
-    while pressed != 32:
-        assign pressed (#rxGetKey);
+    if pressed != 32:
+        assign pressed (#readInput);
     end;
 
-    while 1 = 1:
-        #print("Input your guess: ");
+    if 1 == 1:
+        #print "Input your guess: ";
         #input;
 
-        var playerInput (#rxReadInput);
+        var playerInput (#readInput);
 
-        if (#getSize, playerInput) > 1:
+        if (#getSize playerInput;) > 1:
             if playerInput == word:
                 #print "Good job! You win!";
                 #exit;
@@ -31,7 +31,7 @@ main:
         else:
             var i 0;
             var found 0;
-            while i < (#getSize, word):
+            while i < (#getSize word;):
                 if playerInput == (word[i]):
                     assign found 1;
                     #print "There is a ";
@@ -41,19 +41,19 @@ main:
                     #print i;
                     #print "th position.\n";
                 end;
-                assign i i + 1;
+                assign i (i + 1);
             end;
 
             if found == 0:
                 #print "There is no ";
                 #print playerInput;
-                #print "!\n;
+                #print "!";
                 assign lives lives - 1;
                 if lives == 0:
-                    #print "You loose! The word was "
+                    #print "You loose! The word was ";
                     #print word;
-                    #print "!\n"
-                    #exit
+                    #print "!";
+                    #exit;
                 else;
                     #print lives;
                     #print " lives remaining\n";

@@ -6,7 +6,7 @@
 
 bool newCall = true;
 char call[32];
-int line = 0;
+int line = 1;
 
 bool inMain = false;
 bool inFunc = false;
@@ -110,10 +110,14 @@ void unbranch(isElse) {
 }
 
 const char *rxlib[] = {
-    "input",
-    "A9 02 20 00 FF ",
     "print",
-    "A9 01 20 00 FF "
+    "A9 01 20 00 FF ",
+    "printn",
+    "A9 02 20 00 FF ",
+    "input",
+    "A9 03 20 00 FF ",
+    "readInput",
+    "A9 04 20 00 FF "
 };
 
 int parseToken(char *token) {
@@ -168,6 +172,8 @@ int parseToken(char *token) {
             } else if (strcmp(call, "assign") == 0) {
             } else if (strcmp(call, "addto") == 0) {
             } else if (strcmp(call, "subfrom") == 0) {
+            } else if (strcmp(call, "") == 0) {
+            } else if (find_variable(call) != -1) {
             } else {
                 printf("\n\033[31mRail compile failure: unknown keyword '%s' at line %d\033[0m\n", call, line);
                 return -1;
@@ -185,6 +191,8 @@ int parseToken(char *token) {
         strncpy(stoken, token, len);
         stoken[len] = '\0';
 
+        if (strcmp(stoken, "") == 0) return 0;
+
         if (strcmp(call, "assign") == 0) {
             if (argCount == 1) {
                 currentVarIdx = find_variable(stoken);
@@ -193,18 +201,19 @@ int parseToken(char *token) {
                     return -1;
                 }
             } else if (argCount == 2) {
-                char *endptr;
-                buffer = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
-                    printf("\n\033[31mRail compile failure: expected integer value for 'assign', got '%s' at line %d\033[0m\n", stoken, line);
-                    return -1;
+                if (strcmp(stoken, "nest") != 0) {
+                    char *endptr;
+                    buffer = strtol(stoken, &endptr, 10);
+                    if (*endptr != '\0') {
+                        printf("\n\033[31mRail compile failure: expected integer value for 'assign', got '%s' at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                    outputPos += sprintf(output + outputPos, "A9 %02X ", buffer);
                 }
-
-                outputPos += sprintf(output + outputPos, "A9 %02X 8D ", buffer);
                 int addr = vars[find_variable(stoken)].address;
-                outputPos += sprintf(output + outputPos, "%02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "8D %02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
             } else {
-                printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
+                printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
                 return -1;
             }
 
@@ -217,14 +226,16 @@ int parseToken(char *token) {
                     return -1;
                 }
             } else if (argCount == 2) {
-                char *endptr;
-                int value = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
-                    printf("\n\033[31mRail compile failure: expected integer value for 'var', got '%s' at line %d\033[0m\n", stoken, line);
-                    return -1;
+                if (strcmp(stoken, "nest") != 0) {
+                    char *endptr;
+                    int value = strtol(stoken, &endptr, 10);
+                    if (*endptr != '\0') {
+                        printf("\n\033[31mRail compile failure: expected integer value for 'var', got '%s' at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                    outputPos += sprintf(output + outputPos, "A9 %02X ", value);
                 }
-                outputPos += sprintf(output + outputPos, "A9 %02X 8D ", value);
-                outputPos += sprintf(output + outputPos, "%02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "8D %02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
             } else {
                 printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
                 return -1;
@@ -332,12 +343,15 @@ int parseToken(char *token) {
                 printf("\n\033[31mRail compile failure: incorrect number of arguments for '%s' at line %d\033[0m\n", call, line);
                 return -1;
             }
+        } else if (find_variable(call) != -1) {
+            
         } else if (isFunc) {
         } else {
             printf("\n\033[31mRail compile failure: expected ';' before '%s' at line %d\033[0m\n", stoken, line);
             return -1;
         }
     }
+
     if (token[strlen(token)-1] == ';' || token[strlen(token)-1] == ':') {
         if (isFunc) outputPos += sprintf(output + outputPos, "%s", funcCallBuffer);
         newCall = true;
@@ -355,8 +369,24 @@ int compile(char *code) {
 
     bool inComment = false;
     bool inString = false;
+    bool newNestCall = false;
+    bool nestCallEnded = false;
+
+
+    int nestBuffer = buffer;
+    int nestBuffer2 = buffer2;
+    int nestBuffer3 = buffer3;
+
+    char nestCBuffer[32];
+    char nestCBuffer2[32];
+    char nestCBuffer3[32];
+
+    char nestCall[32];
+
+    int nestArgCount = 0;
 
     for (int c = 0; c < strlen(code); c++) {
+        bool ignoring = false;
         char ch = code[c];
 
         if (ch == '\n') line++;
@@ -379,40 +409,91 @@ int compile(char *code) {
             strPos++;
         }
 
+        if (ch == ';' && inNest) nestCallEnded = true;
+
         if (ch == '(') {
+            ignoring = true;
+            newNestCall = true;
             if (!newCall) {
+                if (inNest) {
+                    printf("\n\033[31mRail compile failure: cannot have nested call within nested call at line %d\033[0m\n", line);
+                    return -1;
+                }
                 inNest = true;
 
-                int nestBuffer = buffer;
-                int nestBuffer2 = buffer2;
-                int nestBuffer3 = buffer3;
+                nestBuffer = buffer;
+                nestBuffer2 = buffer2;
+                nestBuffer3 = buffer3;
 
-                char nestCBuffer[32];
-                char nestCBuffer2[32];
-                char nestCBuffer3[32];
                 strcpy(nestCBuffer, cbuffer);
                 strcpy(nestCBuffer2, cbuffer2);
                 strcpy(nestCBuffer3, cbuffer3);
 
-                char nestCall[32];
+                nestCall[32];
                 strcpy(nestCall, call);
                 newCall = true;
 
-                int nestArgCount = argCount;
+                nestArgCount = argCount;
+
+                argCount = 0;
+                strcpy(call, "");
             } else {
                 printf("\n\033[31mRail compile failure: unexpected '(' at line %d\033[0m\n", line);
                 return -1;
             }
         }
+        if (ch == ')') {
+            if (!nestCallEnded) {
+                printf("\n\033[31mRail compile failure: expected ';' before ')' at line %d\033[0m\n", line);
+                return -1;
+            }
+            ignoring = true;
+            newCall = true;
+            if (newNestCall) {
+                newNestCall = false;
+
+                token[tokenIdx] = '\0';
+                if (parseToken(token) == -1) return -1;
+                tokenIdx = 0;
+            }
+
+            if (inNest) {
+                inNest = false;
+
+                buffer = nestBuffer;
+                buffer2 = nestBuffer2;
+                buffer3 = nestBuffer3;
+
+                strcpy(cbuffer, nestCBuffer);
+                strcpy(cbuffer2, nestCBuffer2);
+                strcpy(cbuffer3, nestCBuffer3);
+
+                strcpy(call, nestCall);
+                argCount = nestArgCount;
+                newCall = false;
+
+                if (code[c+1] == ';') {
+                    if (parseToken("nest;") == -1) return -1;
+                } else {
+                    if (parseToken("nest") == -1) return -1;
+                }
+                
+            } else {
+                printf("\n\033[31mRail compile failure: unexpected ')' at line %d\033[0m\n", line);
+                return -1;
+            }
+            continue;
+        }
 
         if (isspace(ch) && !inComment && !inString) {
-            if (tokenIdx > 0) {
+            if (tokenIdx > 0 && strcmp(token, "") != 0) {
+                newNestCall = false;
                 token[tokenIdx] = '\0';
                 if (parseToken(token) == -1) return -1;
                 tokenIdx = 0;
             }
         } else {
-            if (tokenIdx < (int)sizeof(token) - 1) {
+            if (tokenIdx < (int)sizeof(token) - 1 && !ignoring) {
                 token[tokenIdx++] = ch;
             }
         }
@@ -436,10 +517,11 @@ int main() {
     while (true) {
         newCall = true;
         call[32];
-        line = 0;
+        line = 1;
         inMain = false;
         inFunc = false;
         isFunc = false;
+        inNest = false;
         currentVarIdx = 0;
         argCount = 0;
         buffer = 0;

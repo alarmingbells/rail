@@ -11,7 +11,7 @@ int main() {
   printf("Enter the number of terms: ");
   scanf("%d", &n);
 
-  printf("Fibonacci Series: %d, %d, ", t1, t2);
+  printf("Fibonacci sequence: %d, %d, ", t1, t2);
 
   for (i = 3; i <= n; ++i) {
     printf("%d, ", nextTerm);
@@ -37,13 +37,15 @@ main:
     var terms (#readInput;);
 
     #print "Fibonacci sequence: ";
+    #printn t1;
+    #printn t2;
 
-    while i < terms:
+    while i != terms:
         #printn nextTerm;
 
-        assign t1 (t2);
-        assign t2 (nextTerm);
-        assign nextTerm (t1 + t2);
+        assign t1 (t2;);
+        assign t2 (nextTerm;);
+        assign nextTerm (t1 + t2;);
 
         addto i 1;
     end;

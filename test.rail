@@ -1,6 +1,8 @@
 main:
     var var1 100;
-    var var2 150;
+    var var2 100;
 
-    assign var1 (var2 + var1;);
+    while var1 != var2:
+        addto var1 1;
+    end;
 end;

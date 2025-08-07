@@ -1,69 +1,55 @@
-define CORRECT_PIN = 1234;
-
 main:
-    var ptr;
-    assign ptr, (#alloc, 500);
+    var ptr 0;
 
     var pin;
-    var attempt;
-    var accessGranted;
-    assign accessGranted, 0;
+    var attempt 0;
+    var accessGranted 0;
+    assign accessGranted 0;
 
-    while accessGranted = 0:
-        print "Enter your PIN:";
+    while accessGranted == 0:
+        #print "Enter your PIN:";
         #input;
-        assign attempt, (#rxReadInput);
-        assign pin = attempt;
+        assign attempt (#readInput;);
+        assign pin (attempt;);
 
-        if pin = CORRECT_PIN:
-            assign accessGranted, 1;
-            print "Access granted.";
+        if pin == 123:
+            assign accessGranted 1;
+            #print "Access granted.";
         else:
-            print "Wrong PIN. Try again.";
+            #print "Wrong PIN. Try again.";
         end;
     end;
 
-    print "Select an option:";
-    print "1. View notes";
-    print "2. Add note";
-    print "3. Exit";
+    #print "Select an option:";
+    #print "1. View notes";
+    #print "2. Add note";
+    #print "3. Exit";
 
-    var option;
-    var running;
-    assign running, 1;
+    var option 0;
+    var running 1;
 
-    while running = 1:
+    while running == 1:
         #input;
-        assign option, (#rxGetKey);
+        assign option (#readInput);
 
-        if option = 49: // ASCII '1'
-            call viewNotes;
-        elseif option = 50: // ASCII '2'
-            call addNote;
-        elseif option = 51: // ASCII '3'
-            print "Goodbye!";
-            #free ptr;
-            #exit;
+        if option == 49: / ASCII '1' /
+            #print "Retrieving stored notes...";
+            var notes;
+            assign notes (#readInput);
         else:
-            print "Invalid option.";
+            if option == 50: / ASCII '2' /
+                #print "Enter your note:";
+                #input;
+                assign notes (#readInput);
+                #print "Note saved.";
+            else:
+                if option == 51: / ASCII '3' /
+                    #print "Goodbye!";
+                    assign running 0;
+                else:
+                    #print "Invalid option.";
+                end;
+            end;            
         end;
     end;
-end;
-
-function viewNotes:
-    print "Retrieving stored notes...";
-    var notes;
-    assign notes, (#read ptr, 500);
-
-    return;
-end;
-
-function addNote:
-    print "Enter your note:";
-    #input;
-    var newNote;
-    assign newNote, (#rxReadInput);
-    #write newNote, ptr;
-    print "Note saved.";
-    return;
 end;

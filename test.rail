@@ -1,8 +1,12 @@
+function number:
+    var var3 200;
+return 0;
+
 main:
     var var1 100;
     var var2 100;
 
-    while var1 != var2:
+    while var1 != 2:
         addto var1 1;
     end;
 end;

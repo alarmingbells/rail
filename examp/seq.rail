@@ -40,7 +40,7 @@ main:
     #printn t1;
     #printn t2;
 
-    while i != terms:
+    while i < terms:
         #printn nextTerm;
 
         assign t1 (t2;);

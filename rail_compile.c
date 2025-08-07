@@ -13,6 +13,8 @@ bool inFunc = false;
 bool inNest = false;
 bool isFunc = false;
 
+int mainPos = 0;
+
 int currentVarIdx = 0;
 
 int argCount = 0;
@@ -31,30 +33,54 @@ char output[65536];
 char bytes[65536];
 int outputPos = 0;
 
-#define MAX_VARS 128
-
 typedef struct {
     char name[32];
     int address;
 } Variable;
 
-Variable vars[MAX_VARS];
-int var_count = 0;
-int next_heap_addr = 0x0200;
+typedef struct {
+    char name[32];
+    int address;
+} Function;
 
-int add_variable(const char *name) {
-    if (var_count >= MAX_VARS) return -1;
+Variable vars[128];
+int varCount = 0;
+int nextHeapAddr = 0x0200;
 
-    strncpy(vars[var_count].name, name, sizeof(vars[var_count].name) - 1);
-    vars[var_count].name[sizeof(vars[var_count].name) - 1] = '\0';
-    vars[var_count].address = next_heap_addr++;
+Function funcs[8];
+int funcCount = 0;
 
-    return var_count++;
+int addVariable(const char *name) {
+    if (varCount >= 128) return -1;
+
+    strncpy(vars[varCount].name, name, sizeof(vars[varCount].name) - 1);
+    vars[varCount].name[sizeof(vars[varCount].name) - 1] = '\0';
+    vars[varCount].address = nextHeapAddr++;
+
+    return varCount++;
 }
 
-int find_variable(const char *name) {
-    for (int i = 0; i < var_count; i++) {
+int addFunc(const char *name) {
+    if (funcCount >= 8) return -1;
+
+    strncpy(funcs[funcCount].name, name, sizeof(funcs[funcCount].name) - 1);
+    funcs[funcCount].name[sizeof(funcs[funcCount].name) - 1] = '\0';
+    funcs[funcCount].address = outputPos;
+
+    return funcCount++;
+}
+
+int findVariable(const char *name) {
+    for (int i = 0; i < varCount; i++) {
         if (strcmp(vars[i].name, name) == 0) return i;
+    }
+
+    return -1;
+}
+
+int callFunc(const char *name) {
+    for (int i = 0; i < funcCount; i++) {
+        if (strcmp(funcs[i].name, name) == 0) return i;
     }
 
     return -1;
@@ -72,6 +98,7 @@ typedef struct Branch {
     int depth;
     int type;
     int bytePos;
+    int isImmediate;
     int loopCond[3];
 } Branch;
 
@@ -90,9 +117,10 @@ void branch(position) {
     current_branch = branch_count;
     branch_count++;
 }
-void loopBranch(position, conditionVar1, operator, conditionVar2) {
+void loopBranch(position, conditionVar1, operator, conditionVar2, isImmediate) {
     if (branch_count >= MAX_BRANCHES) return;
 
+    branches[branch_count].isImmediate = isImmediate;
     branches[branch_count].parent = current_branch;
     branches[branch_count].depth = (current_branch == -1) ? 0 : branches[current_branch].depth + 1;
     branches[branch_count].type = 2;
@@ -125,7 +153,9 @@ void unbranch(isElse) {
             int var1Addr = branches[current_branch].loopCond[0];
             int var2Addr = branches[current_branch].loopCond[2];
             outputPos += sprintf(output + outputPos, "AD %02X %02X ", var1Addr & 0xFF, (var1Addr >> 8) & 0xFF);
-            outputPos += sprintf(output + outputPos, "CD %02X %02X ", var2Addr & 0xFF, (var2Addr >> 8) & 0xFF);
+            
+            if (!branches[current_branch].isImmediate) outputPos += sprintf(output + outputPos, "CD %02X %02X ", var2Addr & 0xFF, (var2Addr >> 8) & 0xFF);
+            else outputPos += sprintf(output + outputPos, "C9 %02X ", var2Addr);
 
             if (branches[current_branch].loopCond[1] == 1) {
                 int distance = (outputPos/3) - branches[current_branch].bytePos;
@@ -133,9 +163,14 @@ void unbranch(isElse) {
             } else if (branches[current_branch].loopCond[1] == 2) {
                 int distance = (outputPos/3) - branches[current_branch].bytePos;
                 outputPos += sprintf(output + outputPos, "D0 %02X ", (-distance) & 0xFF);
+            } else if (branches[current_branch].loopCond[1] == 3) {
+                int distance = (outputPos/3) - branches[current_branch].bytePos;
+                outputPos += sprintf(output + outputPos, "90 %02X ", (-distance) & 0xFF);
             }
         }
         current_branch = branches[current_branch].parent;
+    } else {
+        if (!inMain) printf("\033[33mWarning: unmatched 'end' was ignored at line %d\033[0m\n", line);
     }
 }
 
@@ -169,9 +204,14 @@ int parseToken(char *token) {
 
 
         if (strncmp(call, "main", 4) == 0) {
-            inMain = true;
+            if (!inFunc) {
+                inMain = true;
+            } else {
+                printf("\033[31mRail compile failure: expected 'return' to end function before 'main' at line %d\033[0m\n", line);
+                return -1;
+            }
         } else {
-            if (!inMain) {
+            if (!inMain && !inFunc) {
                 if (strcmp(call, "function") == 0) {
                     inFunc = true;
                 } else {
@@ -193,6 +233,7 @@ int parseToken(char *token) {
                     printf("\n\033[31mRail compile failure: '%s' is not a valid function at line %d\033[0m\n", call, line);
                     return -1;
                 }
+            } else if (strcmp(call, "return") == 0) {
             } else if (strcmp(call, "end") == 0) {
                 unbranch(false);
             } else if (strcmp(call, "else") == 0) {
@@ -204,8 +245,8 @@ int parseToken(char *token) {
             } else if (strcmp(call, "addto") == 0) {
             } else if (strcmp(call, "subfrom") == 0) {
             } else if (strcmp(call, "") == 0) {
-            } else if (find_variable(call) != -1) {
-                int varIdx = find_variable(call);
+            } else if (findVariable(call) != -1) {
+                int varIdx = findVariable(call);
                 int VAddress = vars[varIdx].address;
                 outputPos += sprintf(output + outputPos, "AD %02X %02X ", VAddress & 0xFF, (VAddress >> 8) & 0xFF);
             } else {
@@ -227,9 +268,38 @@ int parseToken(char *token) {
 
         if (strcmp(stoken, "") == 0) return 0;
 
-        if (strcmp(call, "assign") == 0) {
+        if (strcmp(call, "function") == 0) {
             if (argCount == 1) {
-                currentVarIdx = find_variable(stoken);
+                addFunc(stoken);
+            } else {
+                printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
+                return -1;
+            }
+        } else if (strcmp(call, "return") == 0) {
+            if (argCount == 1) {
+                char *endptr;
+                int value = strtol(stoken, &endptr, 10);
+                if (*endptr != '\0') {
+                    int varIdx = findVariable(stoken);
+                    if (varIdx == -1) {
+                        printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    } else {
+                        outputPos += sprintf(output + outputPos, "AD %02X %02X ", vars[varIdx].address & 0xFF, (vars[varIdx].address >> 8) & 0xFF);
+                    }
+                } else {
+                    outputPos += sprintf(output + outputPos, "A9 %02X ", strtol(stoken, NULL, 10) & 0xFF);
+                }
+
+                inFunc = false;
+            } else {
+                printf("\n\033[31mRail compile failure: cannot return multiple values at line %d\033[0m\n", line);
+                return -1;
+            }
+
+        } else if (strcmp(call, "assign") == 0) {
+            if (argCount == 1) {
+                currentVarIdx = findVariable(stoken);
                 if (currentVarIdx == -1) {
                     printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -244,7 +314,7 @@ int parseToken(char *token) {
                     }
                     outputPos += sprintf(output + outputPos, "A9 %02X ", buffer);
                 }
-                int addr = vars[find_variable(stoken)].address;
+                int addr = vars[findVariable(stoken)].address;
                 outputPos += sprintf(output + outputPos, "8D %02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
             } else {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
@@ -253,8 +323,8 @@ int parseToken(char *token) {
 
         } else if (strcmp(call, "var") == 0) {
             if (argCount == 1) {
-                if (find_variable(stoken) == -1) {
-                    currentVarIdx = add_variable(stoken);
+                if (findVariable(stoken) == -1) {
+                    currentVarIdx = addVariable(stoken);
                 } else {
                     printf("\n\033[31mRail compile failure: variable name '%s' already in use at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -281,7 +351,7 @@ int parseToken(char *token) {
                 buffer = strtol(stoken, &endptr, 10);
                 strcpy(cbuffer3, "A9");
                 if (*endptr != '\0') {
-                    int varIdx = find_variable(stoken);
+                    int varIdx = findVariable(stoken);
                     if (varIdx != -1) {
                         strcpy(cbuffer, "AD");
                         buffer = vars[varIdx].address;
@@ -300,6 +370,9 @@ int parseToken(char *token) {
                 } else if (strcmp(stoken, ">=") == 0) {
                     buffer2 = 3;
                     strcpy(cbuffer2, "B0");
+                } else if (strcmp(stoken, "<") == 0) {
+                    buffer2 = 4;
+                    strcpy(cbuffer2, "90");
                 } else {
                     printf("\n\033[31mRail compile failure: unexpected token '%s' at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -309,7 +382,7 @@ int parseToken(char *token) {
                 buffer3 = strtol(stoken, &endptr, 10);
                 strcpy(cbuffer3, "C9");
                 if (*endptr != '\0') {
-                    int varIdx = find_variable(stoken);
+                    int varIdx = findVariable(stoken);
                     if (varIdx != -1) {
                         strcpy(cbuffer3, "CD");
                         buffer3 = vars[varIdx].address;
@@ -335,7 +408,7 @@ int parseToken(char *token) {
 
         } else if (strcmp(call, "while") == 0) {
             if (argCount == 1) {
-                int varIdx = find_variable(stoken);
+                int varIdx = findVariable(stoken);
                 if (varIdx != -1) {
                     buffer = vars[varIdx].address;
                 } else {
@@ -347,20 +420,27 @@ int parseToken(char *token) {
                     buffer2 = 1;
                 } else if (strcmp(stoken, "!=") == 0) {
                     buffer2 = 2;
+                } else if (strcmp(stoken, "<") == 0) {
+                    buffer2 = 3;
                 } else {
                     printf("\n\033[31mRail compile failure: unexpected token '%s' at line %d\033[0m\n", stoken, line);
                     return -1;
                 }
             } else if (argCount == 3) {
-                int varIdx = find_variable(stoken);
+                int varIdx = findVariable(stoken);
                 if (varIdx != -1) {
                     buffer3 = vars[varIdx].address;
+                    loopBranch(outputPos/3, buffer, buffer2, buffer3, false);
                 } else {
-                    printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
-                    return -1;
-                }
+                    char *endptr;
+                    buffer3 = strtol(stoken, &endptr, 10);
 
-                loopBranch(outputPos/3, buffer, buffer2, buffer3);
+                    if (*endptr != '\0') {
+                        printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                    loopBranch(outputPos/3, buffer, buffer2, buffer3, true);
+                }
             } else {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
                 return -1;
@@ -368,7 +448,7 @@ int parseToken(char *token) {
  
         } else if (strcmp(call, "addto") == 0) {
             if (argCount == 1) {
-                int variable = find_variable(stoken);
+                int variable = findVariable(stoken);
                 if (variable == -1) {
                     printf("\n\033[31mRail compile failure: invalid variable name '%s' for 'addto' at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -390,7 +470,7 @@ int parseToken(char *token) {
             }
         } else if (strcmp(call, "subfrom") == 0) {
             if (argCount == 1) {
-                int variable = find_variable(stoken);
+                int variable = findVariable(stoken);
                 if (variable == -1) {
                     printf("\n\033[31mRail compile failure: invalid variable name '%s' for 'subfrom' at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -410,7 +490,7 @@ int parseToken(char *token) {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
                 return -1;
             }
-        } else if (find_variable(call) != -1) {
+        } else if (findVariable(call) != -1) {
             if (argCount == 1) {
                 if (strcmp(stoken, "+") == 0) {
                     buffer = 1;
@@ -422,7 +502,7 @@ int parseToken(char *token) {
                 char *endptr;
                 int value = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    int varIdx = find_variable(stoken);
+                    int varIdx = findVariable(stoken);
                     if (varIdx != -1) {
                         buffer3 = 1;
                         buffer2 = vars[varIdx].address;
@@ -625,8 +705,8 @@ int main() {
         buffer2 = 0;
         buffer3 = 0;
         outputPos = 0;
-        var_count = 0;
-        next_heap_addr = 0x0200;
+        varCount = 0;
+        nextHeapAddr = 0x0200;
         memset(vars, 0, sizeof(vars));
         memset(output, 0, sizeof(output));
         memset(bytes, 0, sizeof(bytes));

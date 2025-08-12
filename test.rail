@@ -1,12 +1,35 @@
-function number:
-    var var3 200;
-return 0;
-
 main:
-    var var1 100;
-    var var2 100;
+    var secret 42;
+    var guess 0;
+    var attempts 0;
+    var maxAttempts 5;
 
-    while var1 != 2:
-        addto var1 1;
+    #print "G";
+    #printn maxAttempts;
+
+    while attempts < maxAttempts:
+        #print "E";
+        assign guess (#readInput;);
+
+        if guess == secret:
+            #print "C";
+        end;
+
+        if guess < secret:
+            #print "T";
+        end;
+
+        if guess == secret:
+            #print "T";
+        end;
+
+        addto attempts 1;
+        #print "A";
+        #printn (maxAttempts - attempts;);
+    end;
+
+    if guess != secret:
+        #print "O";
+        #printn secret;
     end;
 end;

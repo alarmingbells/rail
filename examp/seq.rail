@@ -32,7 +32,7 @@ main:
     var t2 0;
 
     var nextTerm (t1 + t2;);
-    #print "Enter the number of terms: ";
+    #print "Enter the number of terms:";
 
     var terms (#readInput;);
 

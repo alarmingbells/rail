@@ -186,6 +186,14 @@ const char *rxlib[] = {
 };
 
 int parseToken(char *token) {
+    if (strcmp(token, ";") == 0) {
+        if (isFunc) outputPos += sprintf(output + outputPos, "%s", funcCallBuffer);
+        newCall = true;
+        isFunc = false;
+        argCount = 0;
+        return 0;
+    }
+
     if (newCall) {
         newCall = false;
 
@@ -494,6 +502,8 @@ int parseToken(char *token) {
             if (argCount == 1) {
                 if (strcmp(stoken, "+") == 0) {
                     buffer = 1;
+                } else if (strcmp(stoken, "-") == 0) {
+                    buffer = 2;
                 } else {
                     printf("\n\033[31mRail compile failure: unexpected token '%s' at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -521,6 +531,13 @@ int parseToken(char *token) {
                     } else {
                         int stokenValue = strtol(stoken, NULL, 10);
                         outputPos += sprintf(output + outputPos, "69 %02X ", stokenValue & 0xFF);
+                    }
+                } else if (buffer == 2) {
+                    if (buffer3 == 1) {
+                        outputPos += sprintf(output + outputPos, "ED %02X %02X ", buffer2 & 0xFF, (buffer2 >> 8) & 0xFF);
+                    } else {
+                        int stokenValue = strtol(stoken, NULL, 10);
+                        outputPos += sprintf(output + outputPos, "E9 %02X ", stokenValue & 0xFF);
                     }
                 }
             } else {
@@ -553,6 +570,7 @@ int compile(char *code) {
     bool inString = false;
     bool nestCallEnded = false;
 
+    bool nestIsFunc = false;
 
     int nestBuffer = buffer;
     int nestBuffer2 = buffer2;
@@ -588,6 +606,7 @@ int compile(char *code) {
             }
             outputPos += sprintf(output + outputPos, "A9 %02X 85 %02X ", (unsigned char)ch, 224 + strPos);
             strPos++;
+            continue;
         }
 
         if (ch == ';' && inNest) nestCallEnded = true;
@@ -600,6 +619,8 @@ int compile(char *code) {
                     return -1;
                 }
                 inNest = true;
+
+                nestIsFunc = isFunc;
 
                 nestBuffer = buffer;
                 nestBuffer2 = buffer2;
@@ -627,6 +648,7 @@ int compile(char *code) {
                 printf("\n\033[31mRail compile failure: expected ';' before ')' at line %d\033[0m\n", line);
                 return -1;
             }
+            nestCallEnded = false;
             ignoring = true;
 
             token[tokenIdx] = '\0';
@@ -636,6 +658,8 @@ int compile(char *code) {
             if (inNest) {
                 inNest = false;
                 newCall = true;
+
+                isFunc = nestIsFunc;
 
                 buffer = nestBuffer;
                 buffer2 = nestBuffer2;

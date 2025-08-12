@@ -2,7 +2,7 @@ main:
     var lives 5;
 
     #print "Welcome to Hangman!";
-    #print "Input secret word:";
+    #print "Input 5 letter word: ";
 
     #input;
 
@@ -17,21 +17,20 @@ main:
         assign pressed (#readInput);
     end;
 
-    if 1 == 1:
+    var running 1;
+
+    while running == 1:
         #print "Input your guess: ";
         #input;
 
         var playerInput (#readInput);
 
-        if (#getSize playerInput;) > 1:
-            if playerInput == word:
-                #print "Good job! You win!";
-                #exit;
-            else;
+        if playerInput == word:
+            #print "Good job! You win!";
         else:
             var i 0;
             var found 0;
-            while i < (#getSize word;):
+            while i < 5:
                 if playerInput == (word[i]):
                     assign found 1;
                     #print "There is a ";
@@ -53,7 +52,7 @@ main:
                     #print "You loose! The word was ";
                     #print word;
                     #print "!";
-                    #exit;
+                    running = 0;
                 else;
                     #print lives;
                     #print " lives remaining\n";

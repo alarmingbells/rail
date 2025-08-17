@@ -21,6 +21,9 @@ int argCount = 0;
 
 char funcCallBuffer[32];
 
+int funcReturnAddr = 0x8000;
+int mainAddr = 0x8000;
+
 int buffer = 0;
 int buffer2 = 0;
 int buffer3 = 0;
@@ -30,7 +33,7 @@ char cbuffer2[32];
 char cbuffer3[32];
 
 char output[65536];
-char bytes[65536];
+char bytes[32768];
 int outputPos = 0;
 
 typedef struct {
@@ -65,7 +68,7 @@ int addFunc(const char *name) {
 
     strncpy(funcs[funcCount].name, name, sizeof(funcs[funcCount].name) - 1);
     funcs[funcCount].name[sizeof(funcs[funcCount].name) - 1] = '\0';
-    funcs[funcCount].address = outputPos;
+    funcs[funcCount].address = 0x8000 + outputPos/3;
 
     return funcCount++;
 }
@@ -73,6 +76,14 @@ int addFunc(const char *name) {
 int findVariable(const char *name) {
     for (int i = 0; i < varCount; i++) {
         if (strcmp(vars[i].name, name) == 0) return i;
+    }
+
+    return -1;
+}
+
+int findFunc(const char *name) {
+    for (int i = 0; i < varCount; i++) {
+        if (strcmp(funcs[i].name, name) == 0) return i;
     }
 
     return -1;
@@ -214,6 +225,7 @@ int parseToken(char *token) {
         if (strncmp(call, "main", 4) == 0) {
             if (!inFunc) {
                 inMain = true;
+                mainAddr = 0x8000 + outputPos/3;
             } else {
                 printf("\033[31mRail compile failure: expected 'return' to end function before 'main' at line %d\033[0m\n", line);
                 return -1;
@@ -238,8 +250,13 @@ int parseToken(char *token) {
                 if (found != -1) {
                     strcpy(funcCallBuffer, rxlib[found+1]);
                 } else {
-                    printf("\n\033[31mRail compile failure: '%s' is not a valid function at line %d\033[0m\n", call, line);
-                    return -1;
+                    int funcIdx = findFunc(call);
+                    if (funcIdx != 1) {
+                        outputPos += sprintf(output + outputPos, "20 %02X %02X ", funcs[funcIdx].address & 0xFF, (funcs[funcIdx].address >> 8) & 0xFF);
+                    } else {
+                        printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", call, line);
+                        return -1;
+                    }
                 }
             } else if (strcmp(call, "return") == 0) {
             } else if (strcmp(call, "end") == 0) {
@@ -298,6 +315,8 @@ int parseToken(char *token) {
                 } else {
                     outputPos += sprintf(output + outputPos, "A9 %02X ", strtol(stoken, NULL, 10) & 0xFF);
                 }
+
+                outputPos += sprintf(output + outputPos, "60 ");
 
                 inFunc = false;
             } else {
@@ -783,6 +802,13 @@ int main() {
 
                     int outputSize = 0;
                     FILE *binary = fopen(compFileName, "wb");
+
+                    unsigned char low  = mainAddr & 0xFF;
+                    unsigned char high = (mainAddr >> 8) & 0xFF;
+
+                    bytes[outputSize++] = hexStringToByte("4C");
+                    bytes[outputSize++] = low;
+                    bytes[outputSize++] = high;
 
                     for (int i = 0; i < (int)strlen(output); i += 3) {
                         char hex[3] = {0};

@@ -1,35 +1,7 @@
+function test:
+    #print "Hello!";
+return 0;
+
 main:
-    var secret 42;
-    var guess 0;
-    var attempts 0;
-    var maxAttempts 5;
-
-    #print "G";
-    #printn maxAttempts;
-
-    while attempts < maxAttempts:
-        #print "E";
-        assign guess (#readInput;);
-
-        if guess == secret:
-            #print "C";
-        end;
-
-        if guess < secret:
-            #print "T";
-        end;
-
-        if guess == secret:
-            #print "T";
-        end;
-
-        addto attempts 1;
-        #print "A";
-        #printn (maxAttempts - attempts;);
-    end;
-
-    if guess != secret:
-        #print "O";
-        #printn secret;
-    end;
+    #test;
 end;

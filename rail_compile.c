@@ -22,7 +22,7 @@ int argCount = 0;
 char funcCallBuffer[32];
 
 int funcReturnAddr = 0x8000;
-int mainAddr = 0x8000;
+int mainAddr = 0x3;
 
 int buffer = 0;
 int buffer2 = 0;
@@ -148,16 +148,24 @@ void loopBranch(position, conditionVar1, operator, conditionVar2, isImmediate) {
 void unbranch(isElse) {
     if (current_branch != -1) {
         if (branches[current_branch].type == 1) {
-            int xxPos = (branches[current_branch].bytePos-1)*3;
+            int xxPos = (branches[current_branch].bytePos-2)*3;
             int distance = (outputPos/3) - branches[current_branch].bytePos;
+
             char jhCode[2];
-            sprintf(jhCode, "%02X", distance & 0xFF);
+            char jhCode2[2];
+            int outputByte = 0x8003 + outputPos/3;
+
+            sprintf(jhCode, "%02X", outputByte & 0xFF);
+            sprintf(jhCode2, "%02X", (outputByte >> 8) & 0xFF);
 
             output[xxPos] = jhCode[0];
             output[xxPos + 1] = jhCode[1];
 
+            output[xxPos + 3] = jhCode2[0];
+            output[xxPos + 4] = jhCode2[1];
+
             if (isElse) {
-                outputPos += sprintf(output + outputPos, "A9 01 C9 01 F0 XX ");
+                outputPos += sprintf(output + outputPos, "4C XX XX ");
                 branch(outputPos/3);
             }
         } else if (branches[current_branch].type == 2) {
@@ -168,15 +176,13 @@ void unbranch(isElse) {
             if (!branches[current_branch].isImmediate) outputPos += sprintf(output + outputPos, "CD %02X %02X ", var2Addr & 0xFF, (var2Addr >> 8) & 0xFF);
             else outputPos += sprintf(output + outputPos, "C9 %02X ", var2Addr);
 
+            int addr = 0x8003 + branches[current_branch].bytePos;
             if (branches[current_branch].loopCond[1] == 1) {
-                int distance = (outputPos/3) - branches[current_branch].bytePos;
-                outputPos += sprintf(output + outputPos, "F0 %02X ", (-distance) & 0xFF);
+                outputPos += sprintf(output + outputPos, "D0 03 4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
             } else if (branches[current_branch].loopCond[1] == 2) {
-                int distance = (outputPos/3) - branches[current_branch].bytePos;
-                outputPos += sprintf(output + outputPos, "D0 %02X ", (-distance) & 0xFF);
+                outputPos += sprintf(output + outputPos, "F0 03 4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
             } else if (branches[current_branch].loopCond[1] == 3) {
-                int distance = (outputPos/3) - branches[current_branch].bytePos;
-                outputPos += sprintf(output + outputPos, "90 %02X ", (-distance) & 0xFF);
+                outputPos += sprintf(output + outputPos, "B0 03 4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
             }
         }
         current_branch = branches[current_branch].parent;
@@ -225,7 +231,7 @@ int parseToken(char *token) {
         if (strncmp(call, "main", 4) == 0) {
             if (!inFunc) {
                 inMain = true;
-                mainAddr = 0x8000 + outputPos/3;
+                mainAddr = 0x8003 + outputPos/3;
             } else {
                 printf("\033[31mRail compile failure: expected 'return' to end function before 'main' at line %d\033[0m\n", line);
                 return -1;
@@ -390,16 +396,19 @@ int parseToken(char *token) {
             } else if (argCount == 2) {
                 if (strcmp(stoken, "==") == 0) {
                     buffer2 = 1;
-                    strcpy(cbuffer2, "D0");
+                    strcpy(cbuffer2, "F0 03 4C ");
                 } else if (strcmp(stoken, "!=") == 0) {
                     buffer2 = 2;
-                    strcpy(cbuffer2, "F0");
+                    strcpy(cbuffer2, "D0 03 4C ");
                 } else if (strcmp(stoken, ">=") == 0) {
                     buffer2 = 3;
-                    strcpy(cbuffer2, "B0");
+                    strcpy(cbuffer2, "90 03 4C ");
                 } else if (strcmp(stoken, "<") == 0) {
                     buffer2 = 4;
-                    strcpy(cbuffer2, "90");
+                    strcpy(cbuffer2, "B0 03 4C ");
+                } else if (strcmp(stoken, ">") == 0) {
+                    buffer2 = 4;
+                    strcpy(cbuffer2, "F0 05 90 03 4C ");
                 } else {
                     printf("\n\033[31mRail compile failure: unexpected token '%s' at line %d\033[0m\n", stoken, line);
                     return -1;
@@ -425,7 +434,7 @@ int parseToken(char *token) {
                 } else if (strcmp(cbuffer3, "C9") == 0) {
                     outputPos += sprintf(output + outputPos, "%s %02X ", cbuffer3, buffer3 & 0xFF);
                 }
-                outputPos += sprintf(output + outputPos, "%s XX ", cbuffer2);
+                outputPos += sprintf(output + outputPos, "%sXX XX ", cbuffer2);
 
                 branch(outputPos/3);
             } else {
@@ -732,7 +741,7 @@ int compile(char *code) {
 }
 
 int main() {
-    printf("Rail Compiler for MOS 6502\n");
+    printf("RailPlay Binary Creation Tool\n");
     printf("Copyright (C) Innovation Incorporated 2025. All rights reserved.\n");
     while (true) {
         newCall = true;
@@ -818,7 +827,11 @@ int main() {
                         int byte = hexStringToByte(hex);
                         bytes[outputSize++] = (unsigned char)byte;
                     }
-                    fwrite(bytes, 1, outputSize, binary);
+
+                    bytes[0x7FFC] = 0x00;
+                    bytes[0x7FFD] = 0x80;
+
+                    fwrite(bytes, 1, 32768, binary);
                     fclose(binary);
                 }
                 free(content);

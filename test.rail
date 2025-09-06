@@ -1,6 +1,4 @@
 main:
-    var test 43;
-    while test < 255:
-        addto test 1;
-    end;
+    #displayInit;
+    print "hello"
 end;

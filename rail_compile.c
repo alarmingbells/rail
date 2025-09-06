@@ -36,6 +36,8 @@ char output[65536];
 char bytes[32768];
 int outputPos = 0;
 
+int strLength = 0;
+
 typedef struct {
     char name[32];
     int address;
@@ -102,6 +104,13 @@ int hexStringToByte(const char *hex) {
     sscanf(hex, "%2x", &byte);
 
     return byte;
+}
+
+void endCall() {
+    if (isFunc) outputPos += sprintf(output + outputPos, "%s", funcCallBuffer);
+    newCall = true;
+    isFunc = false;
+    argCount = 0;
 }
 
 typedef struct Branch {
@@ -192,14 +201,53 @@ void unbranch(isElse) {
 }
 
 const char *rxlib[] = {
-    "print",
-    "A9 01 20 00 FF ",
-    "printn",
-    "A9 02 20 00 FF ",
+    "rxDisplayInit",
+    "A9 FF ",      // LDA #$FF
+    "8D 02 60 ",   // STA $6002
+    "A9 E0 ",      // LDA #$E0
+    "8D 03 60 ",   // STA $6003
+    "A9 38 ",      // LDA #$38
+    "8D 00 60 ",   // STA $6000
+    "A9 00 ",      // LDA #$00
+    "8D 01 60 ",   // STA $6001
+    "A9 80 ",      // LDA #$80
+    "8D 01 60 ",   // STA $6001
+    "A9 00 ",      // LDA #$00
+    "8D 01 60 ",   // STA $6001
+    "A9 0C ",      // LDA #$0C
+    "8D 00 60 ",   // STA $6000
+    "A9 00 ",      // LDA #$00
+    "8D 01 60 ",   // STA $6001
+    "A9 80 ",      // LDA #$80
+    "8D 01 60 ",   // STA $6001
+    "A9 00 ",      // LDA #$00
+    "8D 01 60 ",   // STA $6001
+    "A9 06 ",      // LDA #$06
+    "8D 00 60 ",   // STA $6000
+    "A9 00 ",      // LDA #$00
+    "8D 01 60 ",   // STA $6001
+    "A9 80 ",      // LDA #$80
+    "8D 01 60 ",   // STA $6001
+    "A9 00 ",      // LDA #$00
+    "8D 01 60 ",   // STA $6001
+
+    "clearDisplay",
+    "A9 01 ",      // LDA #$01
+    "8D 00 60 ",   // STA $6000
+    "A9 00 ",      // LDA #$00
+    "8D 01 60 ",   // STA $6001
+    "A9 80 ",      // LDA #$80
+    "8D 01 60 ",   // STA $6001
+    "A9 00 ",      // LDA #$00
+    "8D 01 60 ",   // STA $6001
+
     "input",
-    "A9 03 20 00 FF ",
+    "A9 03 ",      // LDA #$03
+    "20 00 FF ",   // JSR $FF00
+
     "readInput",
-    "A9 04 20 00 FF "
+    "A9 04 ",      // LDA #$04
+    "20 00 FF "    // JSR $FF00
 };
 
 int parseToken(char *token) {
@@ -275,6 +323,7 @@ int parseToken(char *token) {
             } else if (strcmp(call, "assign") == 0) {
             } else if (strcmp(call, "addto") == 0) {
             } else if (strcmp(call, "subfrom") == 0) {
+            } else if (strcmp(call, "print") == 0) {
             } else if (strcmp(call, "") == 0) {
             } else if (findVariable(call) != -1) {
                 int varIdx = findVariable(call);
@@ -526,6 +575,70 @@ int parseToken(char *token) {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
                 return -1;
             }
+        } else if (strcmp(call, "print") == 0) {
+            if (argCount == 1) {
+                if (strcmp(stoken, "str") != 0) {
+                    int varIdx = findVariable(stoken);
+                    if (varIdx == -1) {
+                        char *endptr;
+                        buffer = strtol(stoken, &endptr, 10);
+                        if (*endptr != '\0') {
+                            printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                            return -1;
+                        }
+                        char numstr[12];
+                        snprintf(numstr, sizeof(numstr), "%d", buffer);
+                        for (int i = 0; numstr[i] != '\0'; i++) {
+                            outputPos += sprintf(output + outputPos, "A9 %02X 85 %02X ", (unsigned char)numstr[i], 0xE0 + i);
+                        }
+                    } else {
+                        int addr = vars[varIdx].address;
+                        outputPos += sprintf(output + outputPos, "AD %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
+                        outputPos += sprintf(output + outputPos,
+                            "AD %02X %02X "       // LDA addr (load value)
+                            "A0 00 "              // LDY #$00 (hundreds counter)
+                            "C9 64 "              // CMP #100
+                            "90 07 "              // BCC skip_hundreds
+                            "E9 64 "              // SBC #100
+                            "C8 "                 // INY
+                            "C9 64 "              // CMP #100
+                            "B0 F7 "              // BCS loop_hundreds
+                            "98 "                 // TYA
+                            "69 30 "              // ADC #$30 (to ASCII)
+                            "85 E0 "              // STA $E0 (hundreds)
+                            "AD %02X %02X "       // LDA addr (reload value)
+                            "A0 00 "              // LDY #$00 (tens counter)
+                            "A2 00 "              // LDX #$00
+                            "C9 0A "              // CMP #10
+                            "90 07 "              // BCC skip_tens
+                            "E9 0A "              // SBC #10
+                            "C8 "                 // INY
+                            "C9 0A "              // CMP #10
+                            "B0 F7 "              // BCS loop_tens
+                            "98 "                 // TYA
+                            "69 30 "              // ADC #$30 (to ASCII)
+                            "85 E1 "              // STA $E1 (tens)
+                            "AD %02X %02X "       // LDA addr (reload value)
+                            "29 0F "              // AND #$0F (get units)
+                            "69 30 "              // ADC #$30 (to ASCII)
+                            "85 E2 "              // STA $E2 (units)
+                        , addr & 0xFF, (addr >> 8) & 0xFF);
+
+                        for (int i = 0; i < 3; i++) {
+                            int saddr = 0xE0 + i;
+                            outputPos += sprintf(output + outputPos, "A5 %02X 8D 00 60 A9 80 8D 01 60 A9 A0 8D 01 60 A9 20 8D 01 60 ", saddr & 0xFF);
+                        }
+                    }
+                }
+                for (int i = 0; i < 32; i++) {
+                        int addr = 0xE0+i;
+                        outputPos += sprintf(output + outputPos, "A5 %02X 8D 00 60 A9 80 8D 01 60 A9 A0 8D 01 60 A9 20 8D 01 60 ", addr & 0xFF);
+                    }
+                    endCall();
+            } else {
+                printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
+                return -1;
+            }
         } else if (findVariable(call) != -1) {
             if (argCount == 1) {
                 if (strcmp(stoken, "+") == 0) {
@@ -622,7 +735,7 @@ int compile(char *code) {
 
         if (ch == '"') {
             inString = !inString;
-            if (!inString) parseToken("str");
+            if (!inString) parseToken("str"); else strLength = 0;
             strPos = 0;
             continue;
         }
@@ -632,8 +745,9 @@ int compile(char *code) {
                 printf("\n\033[31mRail compile failure: string exceeds 32 byte buffer limit at line %d\033[0m\n", line);
                 return -1;
             }
-            outputPos += sprintf(output + outputPos, "A9 %02X 85 %02X ", (unsigned char)ch, 224 + strPos);
+            outputPos += sprintf(output + outputPos, "A9 %02X 85 %02X ", (unsigned char)ch, 0xE0 + strPos);
             strPos++;
+            strLength++;
             continue;
         }
 
@@ -741,7 +855,7 @@ int compile(char *code) {
 }
 
 int main() {
-    printf("RailPlay Binary Creation Tool\n");
+    printf("RailExperience Binary Creation Tool\n");
     printf("Copyright (C) Innovation Incorporated 2025. All rights reserved.\n");
     while (true) {
         newCall = true;

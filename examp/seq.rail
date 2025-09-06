@@ -27,28 +27,27 @@ int main() {
 
 
 main:
-    var i 0;
-    var n 0;
+    #rxDisplayInit;
+    var i  1;
 
     var t1 0;
-    var t2 0;
+    var t2 1;
 
     var nextTerm (t1 + t2;);
-    #print "Enter the number of terms:";
 
-    var terms (#readInput;);
-
-    #print "Fibonacci sequence: ";
-    #printn t1;
-    #printn t2;
-
-    while i < terms:
-        #printn nextTerm;
+    while i == 1:
+        #clearDisplay;
+        print nextTerm;
 
         assign t1 (t2;);
         assign t2 (nextTerm;);
         assign nextTerm (t1 + t2;);
 
-        addto i 1;
+        if nextTerm > 144:
+            assign t1 0;
+            assign t2 1;
+            assign nextTerm (t1 + t2;);
+        end;
+
     end;
 end;

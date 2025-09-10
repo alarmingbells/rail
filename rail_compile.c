@@ -119,6 +119,7 @@ typedef struct Branch {
     int type;
     int bytePos;
     int isImmediate;
+    int isUncond;
     int loopCond[3];
 } Branch;
 
@@ -140,15 +141,25 @@ void branch(position) {
 void loopBranch(position, conditionVar1, operator, conditionVar2, isImmediate) {
     if (branch_count >= MAX_BRANCHES) return;
 
+    bool unc = false;
+    if (conditionVar1 == -1) unc = true; 
+
     branches[branch_count].isImmediate = isImmediate;
     branches[branch_count].parent = current_branch;
     branches[branch_count].depth = (current_branch == -1) ? 0 : branches[current_branch].depth + 1;
     branches[branch_count].type = 2;
     branches[branch_count].bytePos = position;
 
-    branches[branch_count].loopCond[0] = conditionVar1;
-    branches[branch_count].loopCond[1] = operator;
-    branches[branch_count].loopCond[2] = conditionVar2;
+    if (!unc) {
+        branches[branch_count].loopCond[0] = conditionVar1;
+        branches[branch_count].loopCond[1] = operator;
+        branches[branch_count].loopCond[2] = conditionVar2;
+    } else {
+        branches[branch_count].loopCond[0] = 0;
+        branches[branch_count].loopCond[1] = 4;
+        branches[branch_count].loopCond[2] = 0;
+    }
+    branches[branch_count].isUncond = unc;
 
     current_branch = branch_count;
     branch_count++;
@@ -178,12 +189,14 @@ void unbranch(isElse) {
                 branch(outputPos/3);
             }
         } else if (branches[current_branch].type == 2) {
-            int var1Addr = branches[current_branch].loopCond[0];
-            int var2Addr = branches[current_branch].loopCond[2];
-            outputPos += sprintf(output + outputPos, "AD %02X %02X ", var1Addr & 0xFF, (var1Addr >> 8) & 0xFF);
-            
-            if (!branches[current_branch].isImmediate) outputPos += sprintf(output + outputPos, "CD %02X %02X ", var2Addr & 0xFF, (var2Addr >> 8) & 0xFF);
-            else outputPos += sprintf(output + outputPos, "C9 %02X ", var2Addr);
+            if (branches[current_branch].loopCond[1] != 4) {
+                int var1Addr = branches[current_branch].loopCond[0];
+                int var2Addr = branches[current_branch].loopCond[2];
+                outputPos += sprintf(output + outputPos, "AD %02X %02X ", var1Addr & 0xFF, (var1Addr >> 8) & 0xFF);
+                
+                if (!branches[current_branch].isImmediate) outputPos += sprintf(output + outputPos, "CD %02X %02X ", var2Addr & 0xFF, (var2Addr >> 8) & 0xFF);
+                else outputPos += sprintf(output + outputPos, "C9 %02X ", var2Addr);
+            }
 
             int addr = 0x8003 + branches[current_branch].bytePos;
             if (branches[current_branch].loopCond[1] == 1) {
@@ -192,6 +205,8 @@ void unbranch(isElse) {
                 outputPos += sprintf(output + outputPos, "F0 03 4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
             } else if (branches[current_branch].loopCond[1] == 3) {
                 outputPos += sprintf(output + outputPos, "B0 03 4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
+            } else if (branches[current_branch].loopCond[1] == 4) {
+                outputPos += sprintf(output + outputPos, "4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
             }
         }
         current_branch = branches[current_branch].parent;
@@ -201,53 +216,59 @@ void unbranch(isElse) {
 }
 
 const char *rxlib[] = {
-    "rxDisplayInit",
-    "A9 FF ",      // LDA #$FF
-    "8D 02 60 ",   // STA $6002
-    "A9 E0 ",      // LDA #$E0
-    "8D 03 60 ",   // STA $6003
-    "A9 38 ",      // LDA #$38
-    "8D 00 60 ",   // STA $6000
-    "A9 00 ",      // LDA #$00
-    "8D 01 60 ",   // STA $6001
-    "A9 80 ",      // LDA #$80
-    "8D 01 60 ",   // STA $6001
-    "A9 00 ",      // LDA #$00
-    "8D 01 60 ",   // STA $6001
-    "A9 0C ",      // LDA #$0C
-    "8D 00 60 ",   // STA $6000
-    "A9 00 ",      // LDA #$00
-    "8D 01 60 ",   // STA $6001
-    "A9 80 ",      // LDA #$80
-    "8D 01 60 ",   // STA $6001
-    "A9 00 ",      // LDA #$00
-    "8D 01 60 ",   // STA $6001
-    "A9 06 ",      // LDA #$06
-    "8D 00 60 ",   // STA $6000
-    "A9 00 ",      // LDA #$00
-    "8D 01 60 ",   // STA $6001
-    "A9 80 ",      // LDA #$80
-    "8D 01 60 ",   // STA $6001
-    "A9 00 ",      // LDA #$00
+    "rxInit",
+    "A9 FF "      // LDA #$FF
+    "8D 02 60 "   // STA $6002
+    "A9 E0 "      // LDA #$E0
+    "8D 03 60 "   // STA $6003
+    "A9 38 "      // LDA #$38
+    "A0 C8 A2 C8 CA D0 FD 88 D0 FA "
+    "8D 00 60 "   // STA $6000
+    "A9 00 "      // LDA #$00
+    "8D 01 60 "   // STA $6001
+    "A9 80 "      // LDA #$80
+    "8D 01 60 "   // STA $6001
+    "A9 00 "      // LDA #$00
+    "8D 01 60 "   // STA $6001
+    "A9 0C "      // LDA #$0C
+    "A0 C8 A2 C8 CA D0 FD 88 D0 FA "
+    "8D 00 60 "   // STA $6000
+    "A9 00 "      // LDA #$00
+    "8D 01 60 "   // STA $6001
+    "A9 80 "      // LDA #$80
+    "8D 01 60 "   // STA $6001
+    "A9 00 "      // LDA #$00
+    "8D 01 60 "   // STA $6001
+    "A9 06 "      // LDA #$06
+    "A0 C8 A2 C8 CA D0 FD 88 D0 FA "
+    "8D 00 60 "   // STA $6000
+    "A9 00 "      // LDA #$00
+    "8D 01 60 "   // STA $6001
+    "A9 80 "      // LDA #$80
+    "8D 01 60 "   // STA $6001
+    "A9 00 "      // LDA #$00
     "8D 01 60 ",   // STA $6001
 
     "clearDisplay",
-    "A9 01 ",      // LDA #$01
-    "8D 00 60 ",   // STA $6000
-    "A9 00 ",      // LDA #$00
-    "8D 01 60 ",   // STA $6001
-    "A9 80 ",      // LDA #$80
-    "8D 01 60 ",   // STA $6001
-    "A9 00 ",      // LDA #$00
-    "8D 01 60 ",   // STA $6001
+    "A0 C8 A2 C8 CA D0 FD 88 D0 FA "
+    "A9 01 "      // LDA #$01
+    "8D 00 60 "   // STA $6000
+    "A9 00 "      // LDA #$00
+    "8D 01 60 "   // STA $6001
+    "A9 80 "      // LDA #$80
+    "8D 01 60 "   // STA $6001
+    "A9 00 "      // LDA #$00
+    "8D 01 60 "   // STA $6001
+    "A0 C8 A2 C8 CA D0 FD 88 D0 FA ",
+
 
     "input",
-    "A9 03 ",      // LDA #$03
-    "20 00 FF ",   // JSR $FF00
+    "A9 03 "      // LDA #$03
+    "20 00 FF "   // JSR $FF00
 
     "readInput",
-    "A9 04 ",      // LDA #$04
-    "20 00 FF "    // JSR $FF00
+    "A9 04 "      // LDA #$04
+    "20 00 FF ",    // JSR $FF00
 };
 
 int parseToken(char *token) {
@@ -306,7 +327,8 @@ int parseToken(char *token) {
                 } else {
                     int funcIdx = findFunc(call);
                     if (funcIdx != 1) {
-                        outputPos += sprintf(output + outputPos, "20 %02X %02X ", funcs[funcIdx].address & 0xFF, (funcs[funcIdx].address >> 8) & 0xFF);
+                        int addr = funcs[funcIdx].address + 0x8003;
+                        outputPos += sprintf(output + outputPos, "20 %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
                     } else {
                         printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", call, line);
                         return -1;
@@ -319,6 +341,8 @@ int parseToken(char *token) {
                 unbranch(true);
             } else if (strcmp(call, "if") == 0) {
             } else if (strcmp(call, "while") == 0) {
+            } else if (strcmp(call, "forever") == 0) {
+                loopBranch(outputPos/3, -1, 0, 0, false);
             } else if (strcmp(call, "var") == 0) {
             } else if (strcmp(call, "assign") == 0) {
             } else if (strcmp(call, "addto") == 0) {
@@ -591,48 +615,20 @@ int parseToken(char *token) {
                         for (int i = 0; numstr[i] != '\0'; i++) {
                             outputPos += sprintf(output + outputPos, "A9 %02X 85 %02X ", (unsigned char)numstr[i], 0xE0 + i);
                         }
+                        strLength = 1;
                     } else {
                         int addr = vars[varIdx].address;
-                        outputPos += sprintf(output + outputPos, "AD %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
-                        outputPos += sprintf(output + outputPos,
-                            "AD %02X %02X "       // LDA addr (load value)
-                            "A0 00 "              // LDY #$00 (hundreds counter)
-                            "C9 64 "              // CMP #100
-                            "90 07 "              // BCC skip_hundreds
-                            "E9 64 "              // SBC #100
-                            "C8 "                 // INY
-                            "C9 64 "              // CMP #100
-                            "B0 F7 "              // BCS loop_hundreds
-                            "98 "                 // TYA
-                            "69 30 "              // ADC #$30 (to ASCII)
-                            "85 E0 "              // STA $E0 (hundreds)
-                            "AD %02X %02X "       // LDA addr (reload value)
-                            "A0 00 "              // LDY #$00 (tens counter)
-                            "A2 00 "              // LDX #$00
-                            "C9 0A "              // CMP #10
-                            "90 07 "              // BCC skip_tens
-                            "E9 0A "              // SBC #10
-                            "C8 "                 // INY
-                            "C9 0A "              // CMP #10
-                            "B0 F7 "              // BCS loop_tens
-                            "98 "                 // TYA
-                            "69 30 "              // ADC #$30 (to ASCII)
-                            "85 E1 "              // STA $E1 (tens)
-                            "AD %02X %02X "       // LDA addr (reload value)
-                            "29 0F "              // AND #$0F (get units)
-                            "69 30 "              // ADC #$30 (to ASCII)
-                            "85 E2 "              // STA $E2 (units)
-                        , addr & 0xFF, (addr >> 8) & 0xFF);
+                        outputPos += sprintf(output + outputPos, "AD %02X %02X 69 30 85 E0 ", addr & 0xFF, (addr >> 8) & 0xFF);
 
-                        for (int i = 0; i < 3; i++) {
+                        for (int i = 0; i < 1; i++) {
                             int saddr = 0xE0 + i;
-                            outputPos += sprintf(output + outputPos, "A5 %02X 8D 00 60 A9 80 8D 01 60 A9 A0 8D 01 60 A9 20 8D 01 60 ", saddr & 0xFF);
+                            outputPos += sprintf(output + outputPos, "A5 %02X 8D 00 60 A9 80 8D 01 60 A9 A0 8D 01 60 A9 20 8D 01 60 " "A0 05 A2 C8 CA D0 FD 88 D0 FA ", saddr & 0xFF);
                         }
                     }
                 }
-                for (int i = 0; i < 32; i++) {
+                for (int i = 0; i < strLength; i++) {
                         int addr = 0xE0+i;
-                        outputPos += sprintf(output + outputPos, "A5 %02X 8D 00 60 A9 80 8D 01 60 A9 A0 8D 01 60 A9 20 8D 01 60 ", addr & 0xFF);
+                        outputPos += sprintf(output + outputPos, "A5 %02X 8D 00 60 A9 80 8D 01 60 A9 A0 8D 01 60 A9 20 8D 01 60 " "A0 05 A2 C8 CA D0 FD 88 D0 FA ", addr & 0xFF);
                     }
                     endCall();
             } else {

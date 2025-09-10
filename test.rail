@@ -1,4 +1,7 @@
 main:
-    #displayInit;
-    print "hello"
+    #rxInit;
+
+    #clearDisplay;
+    
+    print "Hello, World!";
 end;

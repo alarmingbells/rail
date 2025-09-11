@@ -12,6 +12,7 @@ bool inMain = false;
 bool inFunc = false;
 bool inNest = false;
 bool isFunc = false;
+bool pressDefined = false;
 
 int mainPos = 0;
 
@@ -21,6 +22,7 @@ int argCount = 0;
 
 char funcCallBuffer[32];
 
+int interruptAddr = 0x8003;
 int funcReturnAddr = 0x8000;
 int mainAddr = 0x3;
 
@@ -348,6 +350,10 @@ int parseToken(char *token) {
             } else if (strcmp(call, "addto") == 0) {
             } else if (strcmp(call, "subfrom") == 0) {
             } else if (strcmp(call, "print") == 0) {
+            } else if (strcmp(call, "sleep") == 0) {
+            } else if (strcmp(call, "bindPress") == 0) {
+                    pressDefined = true;
+                    outputPos += sprintf(output + outputPos, "58 ");
             } else if (strcmp(call, "") == 0) {
             } else if (findVariable(call) != -1) {
                 int varIdx = findVariable(call);
@@ -634,6 +640,27 @@ int parseToken(char *token) {
             } else {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
                 return -1;
+            }
+        } else if (strcmp(call, "sleep") == 0) {
+            if (argCount == 1) {
+                char *endptr;
+                buffer = strtol(stoken, &endptr, 10);
+                if (*endptr != '\0') {
+                    printf("\n\033[31mRail compile failure: expected integer value for 'sleep', got '%s' at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
+                outputPos += sprintf(output + outputPos, "A0 %02X A2 C8 CA D0 FD 88 D0 FA ", buffer);
+            }
+        } else if (strcmp(call, "bindPress") == 0) {
+            if (argCount == 1) {
+                int funcIdx = findFunc(call);
+                if (funcIdx != 1) {
+                    int addr = funcs[funcIdx].address + 0x8003;
+                    interruptAddr = addr;
+                } else {
+                    printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", call, line);
+                    return -1;
+                }
             }
         } else if (findVariable(call) != -1) {
             if (argCount == 1) {
@@ -940,6 +967,9 @@ int main() {
 
                     bytes[0x7FFC] = 0x00;
                     bytes[0x7FFD] = 0x80;
+
+                    bytes[0x7FFE] = interruptAddr & 0xFF;
+                    bytes[0x7FFF] = (interruptAddr >> 8) & 0xFF;
 
                     fwrite(bytes, 1, 32768, binary);
                     fclose(binary);

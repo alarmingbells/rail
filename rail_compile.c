@@ -264,7 +264,7 @@ const char *rxlib[] = {
     "A0 C8 A2 C8 CA D0 FD 88 D0 FA ",
 
     "displayRow2",
-    "A0 C8 A2 C8 CA D0 FD 88 D0 FA "
+    "A0 05 A2 C8 CA D0 FD 88 D0 FA "
     "A9 C0 "      // LDA #$C0
     "8D 00 60 "   // STA $6000
     "A9 00 "      // LDA #$00
@@ -273,7 +273,7 @@ const char *rxlib[] = {
     "8D 01 60 "   // STA $6001
     "A9 00 "      // LDA #$00
     "8D 01 60 "   // STA $6001
-    "A0 C8 A2 C8 CA D0 FD 88 D0 FA ",
+    "A0 05 A2 C8 CA D0 FD 88 D0 FA ",
 
     "beep",
     "A9 04 "

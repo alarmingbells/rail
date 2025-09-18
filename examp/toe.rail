@@ -1,0 +1,228 @@
+function init:
+    var inputting 0;
+    var i 0;
+    var shipPos 0;
+    var shipPos2 150;
+    var cpuShipPos 0;
+    var cpuShipPos2 0;
+    var cpuSeed 0;
+
+    var tmp 0;
+return 0;
+
+function fsleep:
+    sleep 250;
+    sleep 250;
+    sleep 250;
+    sleep 250;
+return 0;
+
+function printShip:
+    var drawingShip 0;
+    var drawingShip2 0;
+
+    #clearDisplay;
+    assign i 0;
+
+    while i != 16:
+        if i == shipPos:
+            assign drawingShip 1;
+        end;
+        if i == shipPos2:
+            assign drawingShip2 1;
+        end;
+
+        if drawingShip == 1:
+            print "####";
+            addto i 3;
+        end;
+        if drawingShip2 == 1:
+            print "##";
+            addto i 1;
+        end;
+        if drawingShip == 0:
+            if drawingShip2 == 0:
+                print ".";
+            end;
+        end;
+
+        assign drawingShip 0;
+        assign drawingShip2 0;
+        addto i 1;
+    end;
+
+    #displayRow2;
+
+    while i != 32:
+        if i == shipPos:
+            assign drawingShip 1;
+        end;
+        if i == shipPos2:
+            assign drawingShip2 1;
+        end;
+
+        if drawingShip == 1:
+            print "####";
+            addto i 3;
+        end;
+        if drawingShip2 == 1:
+            print "##";
+            addto i 1;
+        end;
+        if drawingShip == 0:
+            if drawingShip2 == 0:
+                print ".";
+            end;
+        end;
+
+        assign drawingShip 0;
+        assign drawingShip2 0;
+        addto i 1;
+    end;
+    
+return 0;
+
+function select:
+    assign inputting 0;
+return press;
+
+main:
+    #init;
+    #rxInit;
+    #clearDisplay;
+
+    bindPress select;
+
+    print "Battleship Jr.";
+    #fsleep;
+    #clearDisplay;
+    print "Press SELECT to";
+    #displayRow2;
+    print "start.";
+    
+    assign inputting 1:
+
+    while inputting == 1:
+        addto cpuShipPos 1;
+        addto cpuShipPos2 2;
+        if cpuShipPos == 29:
+            assign cpuShipPos 0;
+        end;
+        if cpuShipPos2 == 30:
+            assign cpuShipPos2 0;
+        end;
+    end;
+
+    #clearDisplay;
+    print "Hide big ship!";
+    #fsleep;
+    
+    #printShip;
+    assign inputting 1;
+
+    while inputting == 1:
+        if inputting == 1:
+            if bUp == 0:
+                #beep;
+                addto shipPos 1;
+                if shipPos == 13:
+                    assign shipPos 16;
+                end;
+                if shipPos == 29:
+                    assign shipPos 0;
+                end;
+                #printShip;
+            end;
+        end;
+        if inputting == 1:
+            if aUp == 0:
+                #beep;
+                subfrom shipPos 1;
+                if shipPos == 16:
+                    assign shipPos 12;
+                end;
+                if shipPos == 255:
+                    assign shipPos 28;
+                end;
+                #printShip;
+            end;
+        end;
+    end;
+
+    #beepLong;
+
+    #clearDisplay;
+    print "Hide small ship!";
+    #fsleep;
+    #clearDisplay;
+    #printShip;
+
+    assign shipPos2 0;
+    assign inputting 1;
+
+    while inputting == 1:
+        if inputting == 1:
+            assign tmp (shipPos - 1;);
+            if bUp == 0:
+                #beep;
+                addto shipPos2 1;
+                if shipPos2 == 15:
+                    assign shipPos2 16;
+                end;
+                if shipPos2 == 31:
+                    assign shipPos2 0;
+                end;
+                if shipPos2 == tmp:
+                    addto shipPos2 5;
+                end;
+                #printShip;
+            end;
+        end;
+        if inputting == 1:
+            assign tmp (shipPos + 5;);
+            if aUp == 0:
+                #beep;
+                subfrom shipPos2 1;
+                if shipPos2 == 16:
+                    assign shipPos2 14;
+                end;
+                if shipPos2 == 255:
+                    assign shipPos2 30;
+                end;
+                if shipPos2 == tmp:
+                    subfrom shipPos2 5;
+                end;
+                #printShip;
+            end;
+        end;
+    end;
+
+    #beepLong;
+    #clearDisplay;
+    print "Computer placing";
+    #displayRow2;
+    print "ships";
+    #sleep 200;
+    print ".";
+    #sleep 200;
+    print ".";
+    #sleep 200;
+    print ".";
+    #sleep 200;
+
+    #clearDisplay;
+    print "Your turn!";
+
+    print "Press SELECT";
+    #displayRow2;
+    print "when ready!";
+
+    while inputting == 1:
+        addto cpuSeed 1;
+        if cpuSeed == 32:
+            assign cpuSeed 0;
+        end;
+    end;
+
+    
+end;

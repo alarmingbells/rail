@@ -72,7 +72,7 @@ int addFunc(const char *name) {
 
     strncpy(funcs[funcCount].name, name, sizeof(funcs[funcCount].name) - 1);
     funcs[funcCount].name[sizeof(funcs[funcCount].name) - 1] = '\0';
-    funcs[funcCount].address = 0x8000 + outputPos/3;
+    funcs[funcCount].address = 0x8003 + outputPos/3;
 
     return funcCount++;
 }
@@ -202,13 +202,13 @@ void unbranch(isElse) {
 
             int addr = 0x8003 + branches[current_branch].bytePos;
             if (branches[current_branch].loopCond[1] == 1) {
-                outputPos += sprintf(output + outputPos, "D0 03 4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "D0 03 4C %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
             } else if (branches[current_branch].loopCond[1] == 2) {
-                outputPos += sprintf(output + outputPos, "F0 03 4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "F0 03 4C %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
             } else if (branches[current_branch].loopCond[1] == 3) {
-                outputPos += sprintf(output + outputPos, "B0 03 4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "B0 03 4C %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
             } else if (branches[current_branch].loopCond[1] == 4) {
-                outputPos += sprintf(output + outputPos, "4C %02X %02X", addr & 0xFF, (addr >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "4C %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
             }
         }
         current_branch = branches[current_branch].parent;
@@ -221,7 +221,7 @@ const char *rxlib[] = {
     "rxInit",
     "A9 FF "      // LDA #$FF
     "8D 02 60 "   // STA $6002
-    "A9 E0 "      // LDA #$E0
+    "A9 E4 "      // LDA #$E4
     "8D 03 60 "   // STA $6003
     "A9 38 "      // LDA #$38
     "A0 C8 A2 C8 CA D0 FD 88 D0 FA "
@@ -263,14 +263,31 @@ const char *rxlib[] = {
     "8D 01 60 "   // STA $6001
     "A0 C8 A2 C8 CA D0 FD 88 D0 FA ",
 
+    "displayRow2",
+    "A0 C8 A2 C8 CA D0 FD 88 D0 FA "
+    "A9 C0 "      // LDA #$C0
+    "8D 00 60 "   // STA $6000
+    "A9 00 "      // LDA #$00
+    "8D 01 60 "   // STA $6001
+    "A9 80 "      // LDA #$80
+    "8D 01 60 "   // STA $6001
+    "A9 00 "      // LDA #$00
+    "8D 01 60 "   // STA $6001
+    "A0 C8 A2 C8 CA D0 FD 88 D0 FA ",
 
-    "input",
-    "A9 03 "      // LDA #$03
-    "20 00 FF "   // JSR $FF00
+    "beep",
+    "A9 04 "
+    "8D 01 60 "
+    "A0 32 A2 C8 CA D0 FD 88 D0 FA "
+    "A9 00 "
+    "8D 01 60 ",
 
-    "readInput",
-    "A9 04 "      // LDA #$04
-    "20 00 FF ",    // JSR $FF00
+    "beepLong",
+    "A9 04 "
+    "8D 01 60 "
+    "A0 FF A2 C8 CA D0 FD 88 D0 FA "
+    "A9 00 "
+    "8D 01 60 ",
 };
 
 int parseToken(char *token) {
@@ -280,6 +297,22 @@ int parseToken(char *token) {
         isFunc = false;
         argCount = 0;
         return 0;
+    }
+
+    char stoken[128];
+
+    size_t len = strlen(token);
+    while (len > 0 && (token[len - 1] == ';' || token[len - 1] == ':')) {
+        len--;
+    }
+    strncpy(stoken, token, len);
+    stoken[len] = '\0';
+
+    if (strcmp(stoken, "aUp") == 0) {
+        outputPos += sprintf(output + outputPos, "AD 01 60 29 01 8D 00 02 ");
+    }
+    if (strcmp(stoken, "bUp") == 0) {
+        outputPos += sprintf(output + outputPos, "AD 01 60 29 02 4A 8D 01 02 ");
     }
 
     if (newCall) {
@@ -327,14 +360,15 @@ int parseToken(char *token) {
                 if (found != -1) {
                     strcpy(funcCallBuffer, rxlib[found+1]);
                 } else {
-                    int funcIdx = findFunc(call);
-                    if (funcIdx != 1) {
-                        int addr = funcs[funcIdx].address + 0x8003;
+                    int funcIdx = findFunc(call + 1);
+                    if (funcIdx != -1) {
+                        int addr = funcs[funcIdx].address;
                         outputPos += sprintf(output + outputPos, "20 %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
                     } else {
                         printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", call, line);
                         return -1;
                     }
+                    strcpy(funcCallBuffer, "");
                 }
             } else if (strcmp(call, "return") == 0) {
             } else if (strcmp(call, "end") == 0) {
@@ -350,6 +384,7 @@ int parseToken(char *token) {
             } else if (strcmp(call, "addto") == 0) {
             } else if (strcmp(call, "subfrom") == 0) {
             } else if (strcmp(call, "print") == 0) {
+            } else if (strcmp(call, "prints") == 0) {
             } else if (strcmp(call, "sleep") == 0) {
             } else if (strcmp(call, "bindPress") == 0) {
                     pressDefined = true;
@@ -387,22 +422,25 @@ int parseToken(char *token) {
             }
         } else if (strcmp(call, "return") == 0) {
             if (argCount == 1) {
-                char *endptr;
-                int value = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
-                    int varIdx = findVariable(stoken);
-                    if (varIdx == -1) {
-                        printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
-                        return -1;
+                if (strcmp(stoken, "press") != 0) {
+                    char *endptr;
+                    int value = strtol(stoken, &endptr, 10);
+                    if (*endptr != '\0') {
+                        int varIdx = findVariable(stoken);
+                        if (varIdx == -1) {
+                            printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                            return -1;
+                        } else {
+                            outputPos += sprintf(output + outputPos, "AD %02X %02X ", vars[varIdx].address & 0xFF, (vars[varIdx].address >> 8) & 0xFF);
+                        }
                     } else {
-                        outputPos += sprintf(output + outputPos, "AD %02X %02X ", vars[varIdx].address & 0xFF, (vars[varIdx].address >> 8) & 0xFF);
+                        outputPos += sprintf(output + outputPos, "A9 %02X ", strtol(stoken, NULL, 10) & 0xFF);
                     }
+
+                    outputPos += sprintf(output + outputPos, "60 ");
                 } else {
-                    outputPos += sprintf(output + outputPos, "A9 %02X ", strtol(stoken, NULL, 10) & 0xFF);
+                    outputPos += sprintf(output + outputPos, "40 ");
                 }
-
-                outputPos += sprintf(output + outputPos, "60 ");
-
                 inFunc = false;
             } else {
                 printf("\n\033[31mRail compile failure: cannot return multiple values at line %d\033[0m\n", line);
@@ -577,7 +615,7 @@ int parseToken(char *token) {
                     return -1;
                 }
                 outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
-                outputPos += sprintf(output + outputPos, "69 %02X ", buffer2 & 0xFF);
+                outputPos += sprintf(output + outputPos, "18 69 %02X ", buffer2 & 0xFF);
                 outputPos += sprintf(output + outputPos, "8D %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
             } else {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
@@ -599,7 +637,7 @@ int parseToken(char *token) {
                     return -1;
                 }
                 outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
-                outputPos += sprintf(output + outputPos, "E9 %02X ", buffer2 & 0xFF);
+                outputPos += sprintf(output + outputPos, "38 E9 %02X ", buffer2 & 0xFF);
                 outputPos += sprintf(output + outputPos, "8D %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
             } else {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
@@ -624,18 +662,35 @@ int parseToken(char *token) {
                         strLength = 1;
                     } else {
                         int addr = vars[varIdx].address;
-                        outputPos += sprintf(output + outputPos, "AD %02X %02X 69 30 85 E0 ", addr & 0xFF, (addr >> 8) & 0xFF);
+                        outputPos += sprintf(output + outputPos, "18 AD %02X %02X 69 30 85 E0 ", addr & 0xFF, (addr >> 8) & 0xFF);
 
-                        for (int i = 0; i < 1; i++) {
-                            int saddr = 0xE0 + i;
-                            outputPos += sprintf(output + outputPos, "A5 %02X 8D 00 60 A9 80 8D 01 60 A9 A0 8D 01 60 A9 20 8D 01 60 " "A0 05 A2 C8 CA D0 FD 88 D0 FA ", saddr & 0xFF);
-                        }
+                        strLength = 1;
                     }
                 }
                 for (int i = 0; i < strLength; i++) {
                         int addr = 0xE0+i;
                         outputPos += sprintf(output + outputPos, "A5 %02X 8D 00 60 A9 80 8D 01 60 A9 A0 8D 01 60 A9 20 8D 01 60 " "A0 05 A2 C8 CA D0 FD 88 D0 FA ", addr & 0xFF);
                     }
+                    endCall();
+            } else {
+                printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
+                return -1;
+            }
+        } else if (strcmp(call, "prints") == 0) {
+            if (argCount == 1) {
+                int varIdx = findVariable(stoken);
+                if (varIdx == -1) {
+                    printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                    return -1;
+                } else {
+                    int addr = vars[varIdx].address;
+                    outputPos += sprintf(output + outputPos, "AD %02X %02X 85 E0 ", addr & 0xFF, (addr >> 8) & 0xFF);
+
+                    for (int i = 0; i < 1; i++) {
+                        int saddr = 0xE0 + i;
+                        outputPos += sprintf(output + outputPos, "A5 %02X 8D 00 60 A9 80 8D 01 60 A9 A0 8D 01 60 A9 20 8D 01 60 " "A0 05 A2 C8 CA D0 FD 88 D0 FA ", saddr & 0xFF);
+                    }
+                }
                     endCall();
             } else {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
@@ -653,12 +708,12 @@ int parseToken(char *token) {
             }
         } else if (strcmp(call, "bindPress") == 0) {
             if (argCount == 1) {
-                int funcIdx = findFunc(call);
-                if (funcIdx != 1) {
-                    int addr = funcs[funcIdx].address + 0x8003;
+                int funcIdx = findFunc(stoken);
+                if (funcIdx != -1) {
+                    int addr = funcs[funcIdx].address;
                     interruptAddr = addr;
                 } else {
-                    printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", call, line);
+                    printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
                     return -1;
                 }
             }
@@ -691,17 +746,17 @@ int parseToken(char *token) {
                 
                 if (buffer == 1) {
                     if (buffer3 == 1) {
-                        outputPos += sprintf(output + outputPos, "6D %02X %02X ", buffer2 & 0xFF, (buffer2 >> 8) & 0xFF);
+                        outputPos += sprintf(output + outputPos, "18 6D %02X %02X ", buffer2 & 0xFF, (buffer2 >> 8) & 0xFF);
                     } else {
                         int stokenValue = strtol(stoken, NULL, 10);
-                        outputPos += sprintf(output + outputPos, "69 %02X ", stokenValue & 0xFF);
+                        outputPos += sprintf(output + outputPos, "18 69 %02X ", stokenValue & 0xFF);
                     }
                 } else if (buffer == 2) {
                     if (buffer3 == 1) {
-                        outputPos += sprintf(output + outputPos, "ED %02X %02X ", buffer2 & 0xFF, (buffer2 >> 8) & 0xFF);
+                        outputPos += sprintf(output + outputPos, "38 ED %02X %02X ", buffer2 & 0xFF, (buffer2 >> 8) & 0xFF);
                     } else {
                         int stokenValue = strtol(stoken, NULL, 10);
-                        outputPos += sprintf(output + outputPos, "E9 %02X ", stokenValue & 0xFF);
+                        outputPos += sprintf(output + outputPos, "38 E9 %02X ", stokenValue & 0xFF);
                     }
                 }
             } else {
@@ -725,6 +780,9 @@ int parseToken(char *token) {
 }
 
 int compile(char *code) {
+    addVariable("aUp");
+    addVariable("bUp");
+
     char token[128];
     int tokenIdx = 0;
 
@@ -764,8 +822,8 @@ int compile(char *code) {
         }
 
         if (inString) {
-            if (strPos > 31) {
-                printf("\n\033[31mRail compile failure: string exceeds 32 byte buffer limit at line %d\033[0m\n", line);
+            if (strPos > 15) {
+                printf("\n\033[31mRail compile failure: string exceeds 16 byte buffer limit at line %d\033[0m\n", line);
                 return -1;
             }
             outputPos += sprintf(output + outputPos, "A9 %02X 85 %02X ", (unsigned char)ch, 0xE0 + strPos);
@@ -897,6 +955,7 @@ int main() {
         varCount = 0;
         nextHeapAddr = 0x0200;
         memset(vars, 0, sizeof(vars));
+        memset(funcs, 0, sizeof(funcs));
         memset(output, 0, sizeof(output));
         memset(bytes, 0, sizeof(bytes));
         branch_count = 0;

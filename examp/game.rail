@@ -1,63 +1,307 @@
-main:
-    var lives 5;
+function init:
+    var letter1 0;
+    var letter2 0;
+    var letter3 0;
+    var letter4 0;
+    var letter5 0;
 
-    #print "Welcome to Hangman!";
-    #print "Input 5 letter word: ";
+    var letter1guessed 0;
+    var letter2guessed 0;
+    var letter3guessed 0;
+    var letter4guessed 0;
+    var letter5guessed 0;
 
-    #input;
+    var inputSelected 65;
+    var inputting 0;
 
-    var word (#readInput;);
+    var letterchosen 0;
 
-    #print "Pass the keyboard to player 2!\n";
-    #print "Press space when ready\n";
+    var lives 7;
+return 0;
 
-    var pressed 0;
+function fsleep:
+    sleep 255;
+    sleep 255;
+    sleep 255;
+    sleep 255;
+return 0;
 
-    if pressed != 32:
-        assign pressed (#readInput);
+function printChosen:
+    if letter1 == 0:
+        print "_";
+    end;
+    if letter1 != 0:
+        prints letter1;
     end;
 
-    var running 1;
+    if letter2 == 0:
+        print "_";
+    end;
+    if letter2 != 0:
+        prints letter2;
+    end;
+    
+    if letter3 == 0:
+        print "_";
+    end;
+    if letter3 != 0:
+        prints letter3;
+    end;
 
-    while running == 1:
-        #print "Input your guess: ";
-        #input;
+    if letter4 == 0:
+        print "_";
+    end;
+    if letter4 != 0:
+        prints letter4;
+    end;
 
-        var playerInput (#readInput);
+    if letter5 == 0:
+        print "_";
+    end;
+    if letter5 != 0:
+        prints letter5;
+    end;
+return 0;
 
-        if playerInput == word:
-            #print "Good job! You win!";
-        else:
-            var i 0;
-            var found 0;
-            while i < 5:
-                if playerInput == (word[i]):
-                    assign found 1;
-                    #print "There is a ";
-                    #print playerInput;
-                    #print " ";
-                    #print " in the ";
-                    #print i;
-                    #print "th position.\n";
+function input1:
+    #clearDisplay;
+    assign inputting 1;
+
+
+    #printChosen;
+    
+    print "<";
+    prints inputSelected;
+    print ">";
+
+    while inputting == 1:
+        if aUp == 0:
+            if inputting == 1:
+                subfrom inputSelected 1;
+                if inputSelected == 64:
+                    assign inputSelected 90;
                 end;
-                assign i (i + 1);
+                #clearDisplay;
+                #printChosen;
+                print "<";
+                prints inputSelected;
+                print ">";
             end;
+        end;
+        if bUp == 0:
+            if inputting == 1:
+                addto inputSelected 1;
+                if inputSelected == 91:
+                    assign inputSelected 65;
+                end;
+                #clearDisplay;
+                #printChosen;
+                print "<";
+                prints inputSelected;
+                print ">";
+            end;
+        end;
+    end;
 
-            if found == 0:
-                #print "There is no ";
-                #print playerInput;
-                #print "!";
-                assign lives lives - 1;
-                if lives == 0:
-                    #print "You loose! The word was ";
-                    #print word;
-                    #print "!";
-                    running = 0;
-                else;
-                    #print lives;
-                    #print " lives remaining\n";
+    if letter1 == 0:
+        assign letter1 (inputSelected;);
+        assign letterchosen 1;
+    end;
+    if letter2 == 0:
+        if letterchosen == 0:
+            assign letter2 (inputSelected;);
+            assign letterchosen 1;
+        end;
+    end;
+    if letter3 == 0:
+        if letterchosen == 0:
+            assign letter3 (inputSelected;);
+            assign letterchosen 1;
+        end;
+    end;
+    if letter4 == 0:
+        if letterchosen == 0:
+            assign letter4 (inputSelected;);
+            assign letterchosen 1;
+        end;
+    end;
+    if letter5 == 0:
+        if letterchosen == 0:
+            assign letter5 (inputSelected;);
+            assign letterchosen 1;
+        end;
+    end;
+    assign letterchosen 0;
+return 0;
+
+function printGuessed:
+    if letter1guessed == 0:
+        print "_";
+    end;
+    if letter1guessed != 0:
+        prints letter1;
+    end;
+
+    if letter2guessed == 0:
+        print "_";
+    end;
+    if letter2guessed != 0:
+        prints letter2;
+    end;
+    
+    if letter3guessed == 0:
+        print "_";
+    end;
+    if letter3guessed != 0:
+        prints letter3;
+    end;
+
+    if letter4guessed == 0:
+        print "_";
+    end;
+    if letter4guessed != 0:
+        prints letter4;
+    end;
+
+    if letter5guessed == 0:
+        print "_";
+    end;
+    if letter5guessed != 0:
+        prints letter5;
+    end;
+return 0;
+
+function input2:
+    var guessedone 0;
+
+    #clearDisplay;
+    assign inputting 1;
+
+    #printGuessed;
+    
+    print "<";
+    prints inputSelected;
+    print ">";
+
+    while inputting == 1:
+        if aUp == 0:
+            if inputting == 1:
+                subfrom inputSelected 1;
+                if inputSelected == 64:
+                    assign inputSelected 90;
+                end;
+                #clearDisplay;
+                #printGuessed;
+                print "<";
+                prints inputSelected;
+                print ">";
+            end;
+        end;
+        if bUp == 0:
+            if inputting == 1:
+                addto inputSelected 1;
+                if inputSelected == 91:
+                    assign inputSelected 65;
+                end;
+                #clearDisplay;
+                #printGuessed;
+                print "<";
+                prints inputSelected;
+                print ">";
+            end;
+        end;
+    end;
+
+    if letter1 == inputSelected:
+        assign letter1guessed 1;
+        assign guessedone 1;
+    end;
+    if letter2 == inputSelected:
+        assign letter2guessed 1;
+        assign guessedone 1;
+    end;
+    if letter3 == inputSelected:
+        assign letter3guessed 1;
+        assign guessedone 1;
+    end;
+    if letter4 == inputSelected:
+        assign letter4guessed 1;
+        assign guessedone 1;
+    end;
+    if letter5 == inputSelected:
+        assign letter5guessed 1;
+        assign guessedone 1;
+    end;
+    
+    if guessedone == 0:
+        #clearDisplay;
+        print "No '";
+        prints inputSelected;
+        print "'.";
+        #fsleep;
+        subfrom lives 1;
+        #clearDisplay;
+        if lives == 0:
+            print "Game over!"
+            forever:
+                sleep 10;
+            end;
+        end;
+        print lives;
+        print " lives left";
+        #fsleep;
+    end;
+    if guessedone == 1:
+        if letter1guessed == 1:
+            if letter2guessed == 1:
+                if letter3guessed == 1:
+                    if letter4guessed == 1:
+                        if letter5guessed == 1:
+                            #clearDisplay;
+                            print "You win!";
+                            forever:
+                                sleep 10;
+                            end;
+                        end;
+                    end;
                 end;
             end;
         end;
+    end;
+
+    assign guessedone 0;
+return 0;
+
+function select:
+    if inputting == 1:
+        assign inputting 0;
+    end;
+    #beep;
+return press;
+
+main:
+    #rxInit;
+    #clearDisplay;
+    #init;
+
+    bindPress select;
+
+    print "Welcome!";
+    #fsleep;
+    #clearDisplay;
+    print "Input word!";
+    #fsleep;
+
+    #input1;
+    #input1;
+    #input1;
+    #input1;
+    #input1;
+
+    #clearDisplay;
+    print "Pass device!";
+    #fsleep;
+    forever:
+        #input2;
     end;
 end;

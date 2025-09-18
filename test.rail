@@ -1,15 +1,6 @@
-function onPress:
-    #clearDisplay;
-    print "Interrupted!"
-return 0;
-
 main:
     #rxInit;
-    bindPress onPress;
-
     #clearDisplay;
-    print "Hello, World!";
-    forever:
-        sleep 0;
-    end;
+
+    print "Welcome!";
 end;

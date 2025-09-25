@@ -64,6 +64,7 @@ function printChosen:
 return 0;
 
 function input1:
+    #beep;
     #clearDisplay;
     assign inputting 1;
 
@@ -77,6 +78,7 @@ function input1:
     while inputting == 1:
         if aUp == 0:
             if inputting == 1:
+                #beep;
                 subfrom inputSelected 1;
                 if inputSelected == 64:
                     assign inputSelected 90;
@@ -90,6 +92,7 @@ function input1:
         end;
         if bUp == 0:
             if inputting == 1:
+                #beep;
                 addto inputSelected 1;
                 if inputSelected == 91:
                     assign inputSelected 65;
@@ -172,6 +175,7 @@ function printGuessed:
 return 0;
 
 function input2:
+    #beep;
     var guessedone 0;
 
     #clearDisplay;
@@ -186,6 +190,7 @@ function input2:
     while inputting == 1:
         if aUp == 0:
             if inputting == 1:
+                #beep;
                 subfrom inputSelected 1;
                 if inputSelected == 64:
                     assign inputSelected 90;
@@ -199,6 +204,7 @@ function input2:
         end;
         if bUp == 0:
             if inputting == 1:
+                #beep;
                 addto inputSelected 1;
                 if inputSelected == 91:
                     assign inputSelected 65;
@@ -238,6 +244,7 @@ function input2:
         print "No '";
         prints inputSelected;
         print "'.";
+        #beep;
         #fsleep;
         subfrom lives 1;
         #clearDisplay;
@@ -276,7 +283,6 @@ function select:
     if inputting == 1:
         assign inputting 0;
     end;
-    #beep;
 return press;
 
 main:
@@ -297,6 +303,8 @@ main:
     #input1;
     #input1;
     #input1;
+
+    assign inputSelected 65;
 
     #clearDisplay;
     print "Pass device!";

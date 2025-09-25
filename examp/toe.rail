@@ -135,6 +135,12 @@ function printCpuShip:
             assign drawingShip2 1;
         end;
 
+        if i == cursor:
+            print "X";
+            assign drawingShip 0;
+            assign drawingShip2 0;
+        end;
+
         if drawingShip == 1:
             if foundShip1 == 1:
                 print "#";
@@ -162,9 +168,101 @@ function printCpuShip:
             end;
             addto i 3;
         end;
+        
         if drawingShip2 == 1:
-            print "##";
+            if foundShip21 == 1:
+                print "#";
+            end;
+            if foundShip21 == 0:
+                print ".";
+            end;
+            if foundShip22 == 1:
+                print "#";
+            end;
+            if foundShip22 == 0:
+                print ".";
+            end;
             addto i 1;
+        end;
+
+        if drawingShip == 0:
+            print ".";
+        end;
+        if drawingShip2 == 0:
+            print ".";
+        end;
+
+        assign drawingShip 0;
+        assign drawingShip2 0;
+        addto i 1;
+    end;
+
+    #displayRow2;
+
+    while i != 32:
+        assign tmp (cpuShipPos;);
+        if i == tmp:
+            assign drawingShip 1;
+        end;
+
+        assign tmp (cpuShipPos + 1;);
+        if i == tmp:
+            assign drawingShip 1;
+        end;
+
+        assign tmp (cpuShipPos + 2;);
+        if i == tmp:
+            assign drawingShip 1;
+        end;
+
+        assign tmp (cpuShipPos + 3;);
+        if i == tmp:
+            assign drawingShip 1;
+        end;
+
+
+        assign tmp (cpuShipPos2;);
+        if i == tmp:
+            assign drawingShip2 1;
+        end;
+
+        assign tmp (cpuShipPos2 + 1;);
+        if i == tmp:
+            assign drawingShip2 1;
+        end;
+
+        if i == cursor:
+            print "X";
+            assign drawingShip 0;
+            assign drawingShip2 0;
+        end;
+
+        if drawingShip == 1:
+            if foundShip1 == 1:
+                print "#";
+            end;
+            if foundShip1 == 0:
+                print ".";
+            end;
+            if foundShip2 == 1:
+                print "#";
+            end;
+            if foundShip2 == 0:
+                print ".";
+            end;
+            if foundShip3 == 1:
+                print "#";
+            end;
+            if foundShip3 == 0:
+                print ".";
+            end;
+            if foundShip4 == 1:
+                print "#";
+            end;
+            if foundShip4 == 0:
+                print ".";
+            end;
+            addto i 3;
         end;
         
         if drawingShip2 == 1:
@@ -183,30 +281,10 @@ function printCpuShip:
             addto i 1;
         end;
 
-        assign drawingShip 0;
-        assign drawingShip2 0;
-        addto i 1;
-    end;
-
-    #displayRow2;
-
-    while i != 32:
-        if i == shipPos:
-            assign drawingShip 1;
-        end;
-        if i == shipPos2:
-            assign drawingShip2 1;
-        end;
-
-        if drawingShip == 1:
-            print "####";
-            addto i 3;
-        end;
-        if drawingShip2 == 1:
-            print "##";
-            addto i 1;
-        end;
-        if drawingShip == 0:
+        if i != cursor:
+            if drawingShip == 0:
+                print ".";
+            end;
             if drawingShip2 == 0:
                 print ".";
             end;
@@ -341,33 +419,118 @@ main:
     print "Computer placing";
     #displayRow2;
     print "ships";
-    #sleep 200;
+    sleep 255;
     print ".";
-    #sleep 200;
+    sleep 255;
     print ".";
-    #sleep 200;
+    sleep 255;
     print ".";
-    #sleep 200;
+    sleep 255;
 
-    #clearDisplay;
-    print "Your turn!";
+    var playing 1;
 
-    print "Press SELECT";
-    #displayRow2;
-    print "when ready!";
+    while playing == 1:
+        #clearDisplay;
+        print "Your turn!";
 
-    while inputting == 1:
-        addto cpuSeed 1;
-        if cpuSeed == 32:
-            assign cpuSeed 0;
+        print "Press SELECT";
+        #displayRow2;
+        print "when ready!";
+
+        assign inputting 1;
+        while inputting == 1:
+            addto cpuSeed 1;
+            if cpuSeed == 32:
+                assign cpuSeed 0;
+            end;
+        end;
+        #beep;
+        
+        #clearDisplay;
+        print "Shoot at enemy!";
+        #fsleep;
+        #clearDisplay;
+        #printCpuShip;
+
+        assign inputting 1;
+        while inputting == 1:
+            if inputting == 1:
+                if aUp == 0:
+                    #beep;
+                    subfrom cursor 1;
+                    if cursor > 32:
+                        assign cursor 0;
+                    end;
+                    #printCpuShip;
+                end;
+                if bUp == 0:
+                    #beep;
+                    addto cursor 1;
+                    if cursor > 32:
+                        assign cursor 0;
+                    end;
+                    #printCpuShip;
+                end;
+            end;
+        end; 
+
+        var hit 0;
+
+        assign tmp (cpuShipPos;);
+        if cursor == tmp:
+            assign foundShip1 1;
+            assign hit 1;
+        end;  
+        addto tmp 1;
+        if cursor == tmp:
+            assign foundShip2 1;
+            assign hit 1;
+        end; 
+        addto tmp 1;
+        if cursor == tmp:
+            assign foundShip3 1;
+            assign hit 1;
+        end; 
+        addto tmp 1; 
+        if cursor == tmp:
+            assign foundShip4 1;
+            assign hit 1;
+        end; 
+
+        assign tmp (cpuShipPos2;);
+        if cursor == tmp:
+            assign foundShip21 1;
+            assign hit 1;
+        end; 
+        addto tmp 1;
+        if cursor == tmp:
+            assign foundShip22 1;
+            assign hit 1;
+        end; 
+
+        #beep;
+        #clearDisplay;
+        print "Missile";
+        #displayRow2;
+        print "travelling";
+        sleep 255;
+        print ".";
+        sleep 255;
+        print ".";
+        sleep 255;
+        print ".";
+        sleep 255;
+        
+        #clearDisplay;
+        if hit == 1:
+            print "Hit!";
+            #beepLong;
+            #beepLong;
+            #beepLong;
+        end;
+        if hit == 0:
+            print "Miss!";
+            #beep;
         end;
     end;
-    #beep;
-    
-    #clearDisplay;
-    print "Shoot at enemy!";
-    #fsleep;
-    #clearDisplay;
-    #printCpuShip;
-    
 end;

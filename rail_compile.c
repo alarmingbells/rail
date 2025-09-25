@@ -48,23 +48,50 @@ typedef struct {
 typedef struct {
     char name[32];
     int address;
+    int size;
+} Array;
+
+typedef struct {
+    char name[32];
+    int address;
 } Function;
 
 Variable vars[128];
 int varCount = 0;
 int nextHeapAddr = 0x0200;
 
+Variable arrays[8];
+int arrayCount = 0;
+
 Function funcs[8];
 int funcCount = 0;
 
 int addVariable(const char *name) {
-    if (varCount >= 128) return -1;
+    if (nextHeapAddr >= 0x3FFF) {
+        printf("\n\033[31mRail compile failure: Too many variables, out of memory!\033[0m\n");
+        return -1;
+    }
 
     strncpy(vars[varCount].name, name, sizeof(vars[varCount].name) - 1);
     vars[varCount].name[sizeof(vars[varCount].name) - 1] = '\0';
     vars[varCount].address = nextHeapAddr++;
 
     return varCount++;
+}
+
+int addArray(const char *name, int size) {
+    if (nextHeapAddr >= (0x3FFF-size)) {
+        printf("\n\033[31mRail compile failure: Too many variables, out of memory!\033[0m\n");
+        return -1;
+    }
+
+    strncpy(arrays[arrayCount].name, name, sizeof(arrays[arrayCount].name) - 1);
+    arrays[arrayCount].name[sizeof(arrays[arrayCount].name) - 1] = '\0';
+    arrays[arrayCount].address = nextHeapAddr++;
+
+    nextHeapAddr += size;
+
+    return arrayCount++;
 }
 
 int addFunc(const char *name) {
@@ -80,6 +107,13 @@ int addFunc(const char *name) {
 int findVariable(const char *name) {
     for (int i = 0; i < varCount; i++) {
         if (strcmp(vars[i].name, name) == 0) return i;
+    }
+
+    return -1;
+}
+int findArray(const char *name) {
+    for (int i = 0; i < arrayCount; i++) {
+        if (strcmp(arrays[i].name, name) == 0) return i;
     }
 
     return -1;
@@ -305,6 +339,43 @@ int parseToken(char *token) {
     while (len > 0 && (token[len - 1] == ';' || token[len - 1] == ':')) {
         len--;
     }
+
+    int arrayIndex = 0;
+    int arrayIndexVar = false;
+
+    bool isIndex = false;
+    char idx[3];
+    int idxidx = 0;
+    for (int i = 0; i < len; i++) {
+        if (token[i] == '[') {
+            isIndex = true;
+            continue;
+        }
+        if (isIndex) {
+            if (token[i] != ']') {
+                idx[idxidx++] = token[i];
+            } else {
+                isIndex = false;
+                idx[idxidx] = '\0';
+                char *endptr;
+                int value = strtol(idx, &endptr, 10);
+                if (*endptr != '\0') {
+                    int varIdx = findVariable(idx);
+                    if (varIdx != -1) {
+                        arrayIndexVar = true;
+                        arrayIndex = vars[varIdx].address;
+                    } else {
+                        printf("\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                } else {
+                    arrayIndex = value;
+                    arrayIndexVar = false;
+                }
+            }
+        }
+    }
+
     strncpy(stoken, token, len);
     stoken[len] = '\0';
 
@@ -319,18 +390,33 @@ int parseToken(char *token) {
         newCall = false;
 
         size_t len = strlen(token);
+        if (len > 0) {
+            int end = (int)len - 1;
+            while (end >= 0 && (token[end] == ';' || token[end] == ':')) end--;
+            if (end >= 0 && token[end] == ']') {
+                int i = end - 1;
+                while (i >= 0 && token[i] != '[') i--;
+                if (i >= 0 && token[i] == '[') {
+                    len = i;
+                } else {
+                    len = end + 1;
+                }
+            } else {
+            len = end + 1;
+            }
+        }
         if (len > 0 && token[len - 1] == ';') {
             strncpy(call, token, len - 1);
             call[len - 1] = '\0';
         } else {
             if (len > 0 && token[len - 1] == ':') {
-                strncpy(call, token, len - 1);
-                call[len - 1] = '\0';
+            strncpy(call, token, len - 1);
+            call[len - 1] = '\0';
             } else {
-                strcpy(call, token);
+            strncpy(call, token, len);
+            call[len] = '\0';
             }
         }
-
 
         if (strncmp(call, "main", 4) == 0) {
             if (!inFunc) {
@@ -380,6 +466,7 @@ int parseToken(char *token) {
             } else if (strcmp(call, "forever") == 0) {
                 loopBranch(outputPos/3, -1, 0, 0, false);
             } else if (strcmp(call, "var") == 0) {
+            } else if (strcmp(call, "arr") == 0) {
             } else if (strcmp(call, "assign") == 0) {
             } else if (strcmp(call, "addto") == 0) {
             } else if (strcmp(call, "subfrom") == 0) {
@@ -394,6 +481,15 @@ int parseToken(char *token) {
                 int varIdx = findVariable(call);
                 int VAddress = vars[varIdx].address;
                 outputPos += sprintf(output + outputPos, "AD %02X %02X ", VAddress & 0xFF, (VAddress >> 8) & 0xFF);
+            } else if (findArray(call) != -1) {
+                int varIdx = findArray(call);
+                int VAddress = arrays[varIdx].address;
+                if (!arrayIndexVar) {
+                    outputPos += sprintf(output + outputPos, "A2 %02X ", arrayIndex);
+                } else {
+                    outputPos += sprintf(output + outputPos, "9D %02X %02X ", arrays[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+                }
+                outputPos += sprintf(output + outputPos, "BD %02X %02X ", VAddress & 0xFF, (VAddress >> 8) & 0xFF);
             } else {
                 printf("\n\033[31mRail compile failure: unknown keyword '%s' at line %d\033[0m\n", call, line);
                 return -1;
@@ -405,6 +501,21 @@ int parseToken(char *token) {
         char stoken[128];
 
         size_t len = strlen(token);
+        if (len > 0) {
+            int end = (int)len - 1;
+            while (end >= 0 && (token[end] == ';' || token[end] == ':')) end--;
+            if (end >= 0 && token[end] == ']') {
+            int i = end - 1;
+            while (i >= 0 && token[i] != '[') i--;
+            if (i >= 0 && token[i] == '[') {
+                len = i;
+            } else {
+                len = end + 1;
+            }
+            } else {
+            len = end + 1;
+            }
+        }
         while (len > 0 && (token[len - 1] == ';' || token[len - 1] == ':')) {
             len--;
         }
@@ -451,8 +562,15 @@ int parseToken(char *token) {
             if (argCount == 1) {
                 currentVarIdx = findVariable(stoken);
                 if (currentVarIdx == -1) {
-                    printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
-                    return -1;
+                    currentVarIdx = findArray(stoken);
+                    if (!arrayIndexVar) buffer2 = 1; else buffer2 = 2;
+                    buffer3 = arrayIndex;
+                    if (currentVarIdx == -1) {
+                        printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                } else {
+                    buffer2 = 0;
                 }
             } else if (argCount == 2) {
                 if (strcmp(stoken, "nest") != 0) {
@@ -462,10 +580,19 @@ int parseToken(char *token) {
                         printf("\n\033[31mRail compile failure: expected integer value for 'assign', got '%s' at line %d\033[0m\n", stoken, line);
                         return -1;
                     }
-                    outputPos += sprintf(output + outputPos, "A9 %02X ", buffer);
+                    if (buffer2 == 0) {
+                        outputPos += sprintf(output + outputPos, "A9 %02X ", buffer);
+                    } else if (buffer2 == 1) {
+                        outputPos += sprintf(output + outputPos, "A9 %02X A2 %02X ", buffer, buffer3);
+                    } else {
+                        outputPos += sprintf(output + outputPos, "AE %02X %02X ", buffer3 & 0xFF, (buffer3 >> 8) & 0xFF);
+                    }
                 }
-                int addr = vars[findVariable(stoken)].address;
-                outputPos += sprintf(output + outputPos, "8D %02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+                if (buffer2 == 0) {
+                    outputPos += sprintf(output + outputPos, "8D %02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+                } else {
+                    outputPos += sprintf(output + outputPos, "9D %02X %02X ", arrays[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+                }
             } else {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
                 return -1;
@@ -490,6 +617,30 @@ int parseToken(char *token) {
                     outputPos += sprintf(output + outputPos, "A9 %02X ", value);
                 }
                 outputPos += sprintf(output + outputPos, "8D %02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+            } else {
+                printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
+                return -1;
+            }
+
+        } else if (strcmp(call, "arr") == 0) {
+            if (argCount == 1) {
+                if (findVariable(stoken) == -1) {
+                    strcpy(cbuffer, stoken);
+                } else {
+                    printf("\n\033[31mRail compile failure: variable name '%s' already in use at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
+                
+            } else if (argCount == 2) {
+                char *endptr;
+                int value = strtol(stoken, &endptr, 10);
+                if (*endptr != '\0') {
+                    printf("\n\033[31mRail compile failure: expected integer value for 'arr', got '%s' at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
+                currentVarIdx = addArray(cbuffer, value);
+                outputPos += sprintf(output + outputPos, "A9 00 8D %02X %02X ", arrays[currentVarIdx].address & 0xFF, (arrays[currentVarIdx].address >> 8) & 0xFF);
+                
             } else {
                 printf("\n\033[31mRail compile failure: unexpected argument '%s' for '%s' at line %d\033[0m\n", stoken, call, line);
                 return -1;

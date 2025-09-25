@@ -1,4 +1,4 @@
-0000 - 00E0 - zero page
+0000 - 00E0 - zero page (attributes)
 00E0 - 00FF - string buffer
 0100 - 01FF - hardware stack
-0200 - 05FF - rx heap
+0200 - 05FF - var space

@@ -1,6 +1,6 @@
 main:
-    #rxInit;
-    #clearDisplay;
+    var i 0;
+    arr test 10;
 
-    print "Welcome!";
+    test[10];
 end;

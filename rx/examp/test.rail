@@ -1,0 +1,4 @@
+main:
+    #clearRV;
+    setPx 10 10 r;
+end;

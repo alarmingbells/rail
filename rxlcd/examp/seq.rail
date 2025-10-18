@@ -1,0 +1,53 @@
+/
+#include <stdio.h>
+int main() {
+
+  int i, n;
+
+  int t1 = 0, t2 = 1;
+
+  int nextTerm = t1 + t2;
+
+  printf("Enter the number of terms: ");
+  scanf("%d", &n);
+
+  printf("Fibonacci sequence: %d, %d, ", t1, t2);
+
+  for (i = 3; i <= n; ++i) {
+    printf("%d, ", nextTerm);
+    t1 = t2;
+    t2 = nextTerm;
+    nextTerm = t1 + t2;
+  }
+
+  return 0;
+}
+/
+
+
+
+main:
+    #rxDisplayInit;
+    var i  1;
+
+    var t1 0;
+    var t2 1;
+
+    var nextTerm (t1 + t2;);
+
+    while i == 1:
+        #clearDisplay;
+        print nextTerm;
+
+        assign t1 (t2;);
+        assign t2 (nextTerm;);
+        assign nextTerm (t1 + t2;);
+
+        if nextTerm > 144:
+            assign t1 0;
+            assign t2 1;
+            assign nextTerm (t1 + t2;);
+        end;
+
+    end;
+end;

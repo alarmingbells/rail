@@ -1,4 +1,18 @@
+RxLCD
+
 0000 - 00E0 - zero page (attributes)
 00E0 - 00FF - string buffer
 0100 - 01FF - hardware stack
-0200 - 05FF - var space
+0200 - 3FFF - var space
+4000 - 7FFF - LCD
+8000 - FFFF - cartridge
+
+Rx
+
+0000 - 00FF - zero page (attributes)
+0100 - 01FF - hardware stack
+0200 - 3FFF - variables
+4000 - 7FFF - RailView frame buffer
+7FFF - BFFF - controller register repeated
+C000 - FFFF - cartridge
+

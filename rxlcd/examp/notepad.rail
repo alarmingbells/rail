@@ -1,0 +1,55 @@
+main:
+    var ptr 0;
+
+    var pin;
+    var attempt 0;
+    var accessGranted 0;
+    assign accessGranted 0;
+
+    while accessGranted == 0:
+        #print "Enter your PIN:";
+        #input;
+        assign attempt (#readInput;);
+        assign pin (attempt;);
+
+        if pin == 123:
+            assign accessGranted 1;
+            #print "Access granted.";
+        else:
+            #print "Wrong PIN. Try again.";
+        end;
+    end;
+
+    #print "Select an option:";
+    #print "1. View notes";
+    #print "2. Add note";
+    #print "3. Exit";
+
+    var option 0;
+    var running 1;
+
+    while running == 1:
+        #input;
+        assign option (#readInput);
+
+        if option == 49: / ASCII '1' /
+            #print "Retrieving stored notes...";
+            var notes;
+            assign notes (#readInput);
+        else:
+            if option == 50: / ASCII '2' /
+                #print "Enter your note:";
+                #input;
+                assign notes (#readInput);
+                #print "Note saved.";
+            else:
+                if option == 51: / ASCII '3' /
+                    #print "Goodbye!";
+                    assign running 0;
+                else:
+                    #print "Invalid option.";
+                end;
+            end;            
+        end;
+    end;
+end;

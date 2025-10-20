@@ -255,7 +255,7 @@ const char *rxlib[] = {
     "clearRV",
     "A2 00 "    //LDX #0
     "A0 40 "    //LDY #40
-    "99 00 40 " // STA 4000, Y
+    "99 00 40 " //STA 4000, Y
     "E8 "       //INX
     "D0 FA "    //BNE loop
     "C8 "       //INY
@@ -317,17 +317,79 @@ int parseToken(char *token) {
     strncpy(stoken, token, len);
     stoken[len] = '\0';
 
-    if (strcmp(stoken, "aUp") == 0) {
-        outputPos += sprintf(output + outputPos, "AD 01 60 29 01 8D 00 02 ");
+    if (strcmp(stoken, "p1Up") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 01 "    //AND #01
+            "85 00 02"  //STA $0200
+        );
     }
-    if (strcmp(stoken, "bUp") == 0) {
-        outputPos += sprintf(output + outputPos, "AD 01 60 29 02 4A 8D 01 02 ");
+    if (strcmp(stoken, "p1Down") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 01 "    //AND #02
+            "4A "       //LSR
+            "85 01 02"  //STA $0201
+        );
     }
-    if (strcmp(stoken, "cUp") == 0) {
-        outputPos += sprintf(output + outputPos, "AD 01 60 29 08 4A 4A 4A 8D 02 02 ");
+    if (strcmp(stoken, "p1Left") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 04 "    //AND #04
+            "4A "       //LSR
+            "4A "       //LSR
+            "85 02 02"  //STA $0202
+        );
     }
-    if (strcmp(stoken, "dUp") == 0) {
-        outputPos += sprintf(output + outputPos, "AD 01 60 29 16 4A 4A 4A 4A 8D 03 02 ");
+    if (strcmp(stoken, "p1Right") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 08 "    //AND #08
+            "4A "       //LSR
+            "4A "       //LSR
+            "4A "       //LSR
+            "85 02 03"  //STA $0203
+        );
+    }
+
+
+    if (strcmp(stoken, "p2Up") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 10 "    //AND #16
+            "4A "       //LSR
+            "4A "       //LSR
+            "4A "       //LSR
+            "4A "       //LSR
+            "85 00 02"  //STA $0204
+        );
+    }
+    if (strcmp(stoken, "p2Down") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 20 "    //AND #32
+            "2A "       //ROL
+            "2A "       //ROL
+            "2A "       //ROL
+            "85 01 02"  //STA $0205
+        );
+    }
+    if (strcmp(stoken, "p2Left") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 40 "    //AND #64
+            "2A "       //ROL
+            "2A "       //ROL
+            "85 02 02"  //STA $0206
+        );
+    }
+    if (strcmp(stoken, "p2Right") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 80 "    //AND #128
+            "2A "       //ROL
+            "85 02 03"  //STA $0207
+        );
     }
 
     if (newCall) {
@@ -743,18 +805,52 @@ int parseToken(char *token) {
                 buffer = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
                     printf("\n\033[31mRail compile failure: expected integer value for 'setPx', got '%s' at line %d\033[0m\n", stoken, line);
-                    return -1;
+                    int varIdx = findVariable(stoken);
+                    if (varIdx != -1) {
+                        buffer = vars[varIdx].address;
+                        buffer3 = 1;
+                    } else {
+                        printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                } else {
+                    buffer3 = 0;
                 }
             }
             if (argCount == 2) {
                 char *endptr;
                 buffer2 = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    printf("\n\033[31mRail compile failure: expected integer value for 'setPx', got '%s' at line %d\033[0m\n", stoken, line);
-                    return -1;
+                    if (buffer3 != 1) {
+                        printf("\n\033[31mRail compile failure: expected integer value for 'setPx' at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                    int varIdx = findVariable(stoken);
+                    if (varIdx != -1) {
+                        buffer2 = vars[varIdx].address;
+                        buffer3 = 1;
+                    } else {
+                        printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
+                } else {
+                    if (buffer3 != 0) {
+                        printf("\n\033[31mRail compile failure: expected variable at line %d\033[0m\n", stoken, line);
+                        return -1;
+                    }
                 }
             }
             if (argCount == 3) {
+                if (strcmp(stoken, "r") == 0 || strcmp(stoken, "g") == 0 || strcmp(stoken, "g") == 0 || strcmp(stoken, "b") == 0 || strcmp(stoken, "x") == 0) {
+                    strcpy(cbuffer, stoken);
+                } else {
+                    printf("\n\033[31mRail compile failure: expected colour value for 'setPx', got '%s' at line %d\033[0m\n", stoken, line);
+                    return -1;
+                }
+
+                int isVariable;
+                isVariable = buffer3;
+
                 if (strcmp(stoken, "r") == 0) {
                     buffer3 = 0x01;
                 } else if (strcmp(stoken, "g") == 0) {
@@ -763,18 +859,51 @@ int parseToken(char *token) {
                     buffer3 = 0x11;
                 } else if (strcmp(stoken, "x") == 0) {
                     buffer3 = 0x00;
+                }
+                
+                
+                if (isVariable == 0) {
+                    if (buffer > 89 || buffer2 > 89) {
+                        printf("\n\033[31mRail compile failure: pixel coordinate is outside of range at line %d\033[0m\n", line);
+                        return -1;
+                    }
+                    int addr = (buffer2*90) + (buffer) + 0x4000;
+                    outputPos += sprintf(output + outputPos, "A9 %02X ", buffer3);
+                    outputPos += sprintf(output + outputPos, "8D %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
                 } else {
-                    printf("\n\033[31mRail compile failure: expected colour value for 'setPx', got '%s' at line %d\033[0m\n", stoken, line);
-                    return -1;
+                    outputPos += sprintf(output + outputPos,
+                        "AC %02X %02X " //LDY ycoord
+                        "A9 00"         //LDA #0
+                        "85 00 "        //STA $00
+                        "85 01 "        //STA $01
+
+                        "A5 00 "        //LDA $00
+                        "18 "           //CLC
+                        "69 5A "        //ADC #90
+                        "85 00 "        //STA $00
+                        "90 02 "        //BCC 02
+                        "E6 01"         //INC $01
+                        "88 "           //DEY
+                        "D0 F2 "        //BNE F2
+
+                        "18 "           //CLC
+                        "6D %02X %02X " //ADC xcoord
+                        "90 02 "        //BCC 02
+                        "E6 01 "        //INC $01
+                        "85 00 "        //STA $00
+
+                        "A5 01 "        //LDA $01
+                        "18 "           //CLC
+                        "69 40 "        //ADC #$40
+                        "85 01 "        //STA $01
+                        
+                        "A0 00 "        //LDY #00
+                        "A9 %02X "      //LDA colour
+                        "91 00 ",       //STA
+                        buffer & 0xFF, (buffer >> 8) & 0xFF, buffer2 & 0xFF, (buffer2 >> 8) & 0xFF, buffer3 & 0xFF);
                 }
-                if (buffer > 89 || buffer2 > 89) {
-                    printf("\n\033[31mRail compile failure: pixel coordinate is outside of setPx range at line %d\033[0m\n", line);
-                    return -1;
-                }
-                int addr = (buffer2*90) + (buffer) + 0x4000;
-                outputPos += sprintf(output + outputPos, "A9 %02X ", buffer3);
-                outputPos += sprintf(output + outputPos, "8D %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
             }
+            
         } else if (strcmp(call, "sleep") == 0) {
             if (argCount == 1) {
                 char *endptr;
@@ -859,10 +988,10 @@ int parseToken(char *token) {
 }
 
 int compile(char *code) {
-    addVariable("aUp");
-    addVariable("bUp");
-    addVariable("cUp");
-    addVariable("dUp");
+    addVariable("p1Up");
+    addVariable("p1Down");
+    addVariable("p1Left");
+    addVariable("p1Right");
 
     char token[128];
     int tokenIdx = 0;

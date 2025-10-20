@@ -1,0 +1,69 @@
+function init:
+    var headx 45;
+    var heady 45;
+    var dir 0;
+    var length 3;
+    arr segments 200; 
+    arr segmentsx 200; 
+    arr segmentsy 200; 
+    var applex 50;
+    var appley 50;
+    var running 1;
+    var i 0;
+    var j 0;
+    while i != 200:
+        assign segments[i] 0;
+        assign segmentsx[i] 0;
+        assign segmentsy[i] 0;
+    end;
+    assign i 0;
+    while i != 90:
+        assign j 0;
+        while j != 90:
+            setPx j i x;
+        end;
+    end;
+end;
+
+main:
+    #init;
+    #clearRV;
+    while running == 1:
+        if dir == 0:
+            addto headx 1;
+        end; 
+        if dir == 1:
+            subfrom headx 1;
+        end; 
+        if dir == 2:
+            subfrom heady 1;
+        end; 
+        if dir == 3:
+            addto heady 1;
+        end; 
+        assign i 0;
+        while i != 200:
+            var added 0;
+            if added == 0:
+                if segments[i] == 0:
+                assign segments[i] length;
+                assign segmentsx[i] headx;
+                assign segmentsy[i] heady;
+                assign added 1;
+            end;
+            if segments[i] != 0:
+                subfrom segments[i] 1;
+            end;
+        end;
+
+        assign i 0;        
+        while i != 200:
+            if segments[i] != 0:
+                setPx segmentsx[i] segmentsy[i] b;
+            end;
+            if segments[i] == 0:
+                setPx segmentsx[i] segmentsy[i] g;
+            end;
+        end;
+    end;
+end;

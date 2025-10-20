@@ -1095,8 +1095,9 @@ int compile(char *code) {
 }
 
 int main() {
-    printf("RailExperience LCD Edition Binary Creation Tool\n");
+    printf("Rail Compiler V1.0\n");
     printf("Copyright (C) Innovation Incorporated 2025. All rights reserved.\n");
+    printf("\nIncluded libraries:\nRXLCD\n");
     while (true) {
         newCall = true;
         call[32];

@@ -23,7 +23,7 @@ function init:
             setPx j i x;
         end;
     end;
-end;
+return 0;
 
 main:
     #init;
@@ -46,10 +46,11 @@ main:
             var added 0;
             if added == 0:
                 if segments[i] == 0:
-                assign segments[i] length;
-                assign segmentsx[i] headx;
-                assign segmentsy[i] heady;
-                assign added 1;
+                    assign segments[i] length;
+                    assign segmentsx[i] headx;
+                    assign segmentsy[i] heady;
+                    assign added 1;
+                end;
             end;
             if segments[i] != 0:
                 subfrom segments[i] 1;

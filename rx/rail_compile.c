@@ -804,7 +804,6 @@ int parseToken(char *token) {
                 char *endptr;
                 buffer = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    printf("\n\033[31mRail compile failure: expected integer value for 'setPx', got '%s' at line %d\033[0m\n", stoken, line);
                     int varIdx = findVariable(stoken);
                     if (varIdx != -1) {
                         buffer = vars[varIdx].address;
@@ -822,7 +821,7 @@ int parseToken(char *token) {
                 buffer2 = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
                     if (buffer3 != 1) {
-                        printf("\n\033[31mRail compile failure: expected integer value for 'setPx' at line %d\033[0m\n", stoken, line);
+                        printf("\n\033[31mRail compile failure: expected integer value for 'setPx', got '%s' at line %d\033[0m\n", stoken, line);
                         return -1;
                     }
                     int varIdx = findVariable(stoken);
@@ -835,7 +834,7 @@ int parseToken(char *token) {
                     }
                 } else {
                     if (buffer3 != 0) {
-                        printf("\n\033[31mRail compile failure: expected variable at line %d\033[0m\n", stoken, line);
+                        printf("\n\033[31mRail compile failure: expected variable at line %d\033[0m\n", line);
                         return -1;
                     }
                 }

@@ -658,9 +658,13 @@ int parseToken(char *token) {
                 strcpy(cbuffer3, "A9");
                 if (*endptr != '\0') {
                     int varIdx = findVariable(stoken);
+                    int arrIdx = findArray(stoken);
                     if (varIdx != -1) {
                         strcpy(cbuffer, "AD");
                         buffer = vars[varIdx].address;
+                    } else if (arrIdx != -1) {
+                        strcpy(cbuffer, "AD");
+                        buffer = (arrays[arrIdx].address + arrayIndex);
                     } else {
                         printf("\n\033[31mRail compile failure: expected integer or variable for 'if', got '%s' at line %d\033[0m\n", stoken, line);
                         return -1;
@@ -758,11 +762,15 @@ int parseToken(char *token) {
         } else if (strcmp(call, "addto") == 0) {
             if (argCount == 1) {
                 int variable = findVariable(stoken);
-                if (variable == -1) {
+                int array = findArray(stoken);
+                if (variable != -1 ) {
+                    buffer = vars[variable].address;
+                } else if (array != -1) {
+                    buffer = arrays[array].address + arrayIndex;
+                } else {
                     printf("\n\033[31mRail compile failure: invalid variable name '%s' for 'addto' at line %d\033[0m\n", stoken, line);
                     return -1;
-                }
-                buffer = vars[variable].address;
+                }                
             } else if (argCount == 2) {
                 char *endptr;
                 buffer2 = strtol(stoken, &endptr, 10);
@@ -780,11 +788,15 @@ int parseToken(char *token) {
         } else if (strcmp(call, "subfrom") == 0) {
             if (argCount == 1) {
                 int variable = findVariable(stoken);
-                if (variable == -1) {
+                int array = findArray(stoken);
+                if (variable != -1 ) {
+                    buffer = vars[variable].address;
+                } else if (array != -1) {
+                    buffer = arrays[array].address + arrayIndex;
+                } else {
                     printf("\n\033[31mRail compile failure: invalid variable name '%s' for 'subfrom' at line %d\033[0m\n", stoken, line);
                     return -1;
-                }
-                buffer = vars[variable].address;
+                }  
             } else if (argCount == 2) {
                 char *endptr;
                 buffer2 = strtol(stoken, &endptr, 10);
@@ -805,8 +817,12 @@ int parseToken(char *token) {
                 buffer = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
                     int varIdx = findVariable(stoken);
+                    int arrIdx = findArray(stoken);
                     if (varIdx != -1) {
                         buffer = vars[varIdx].address;
+                        buffer3 = 1;
+                    } else if (arrIdx != -1) {
+                        buffer = arrays[arrIdx].address + arrayIndex;
                         buffer3 = 1;
                     } else {
                         printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
@@ -825,8 +841,12 @@ int parseToken(char *token) {
                         return -1;
                     }
                     int varIdx = findVariable(stoken);
+                    int arrIdx = findArray(stoken);
                     if (varIdx != -1) {
                         buffer2 = vars[varIdx].address;
+                        buffer3 = 1;
+                    } else if (arrIdx != -1) {
+                        buffer = arrays[arrIdx].address + arrayIndex;
                         buffer3 = 1;
                     } else {
                         printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\033[0m\n", stoken, line);
@@ -872,7 +892,7 @@ int parseToken(char *token) {
                 } else {
                     outputPos += sprintf(output + outputPos,
                         "AC %02X %02X " //LDY ycoord
-                        "A9 00"         //LDA #0
+                        "A9 00 "         //LDA #0
                         "85 00 "        //STA $00
                         "85 01 "        //STA $01
 
@@ -881,7 +901,7 @@ int parseToken(char *token) {
                         "69 5A "        //ADC #90
                         "85 00 "        //STA $00
                         "90 02 "        //BCC 02
-                        "E6 01"         //INC $01
+                        "E6 01 "         //INC $01
                         "88 "           //DEY
                         "D0 F2 "        //BNE F2
 

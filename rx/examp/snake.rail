@@ -8,6 +8,7 @@ function init:
     arr segmentsy 200; 
     var applex 50;
     var appley 50;
+    var appleseed 0;
     var running 1;
     var i 0;
     var j 0;
@@ -41,6 +42,14 @@ main:
         if dir == 3:
             addto heady 1;
         end; 
+        if applex == headx:
+            if appley == heady:
+                addto length 1;
+                assign appley (appleseed + appley;);
+                assign applex (appleseed + applex;);
+                setPx applex appley r;
+            end;
+        end;
         assign i 0;
         while i != 200:
             var added 0;

@@ -4,6 +4,8 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+#define START_ADDR 0xC003
+
 bool newCall = true;
 char call[32];
 int line = 1;
@@ -22,8 +24,8 @@ int argCount = 0;
 
 char funcCallBuffer[32];
 
-int interruptAddr = 0x8003;
-int funcReturnAddr = 0x8000;
+int interruptAddr = START_ADDR;
+int funcReturnAddr = START_ADDR-3;
 int mainAddr = 0x3;
 
 int buffer = 0;
@@ -99,7 +101,7 @@ int addFunc(const char *name) {
 
     strncpy(funcs[funcCount].name, name, sizeof(funcs[funcCount].name) - 1);
     funcs[funcCount].name[sizeof(funcs[funcCount].name) - 1] = '\0';
-    funcs[funcCount].address = 0x8003 + outputPos/3;
+    funcs[funcCount].address = START_ADDR + outputPos/3;
 
     return funcCount++;
 }
@@ -209,7 +211,7 @@ void unbranch(isElse) {
 
             char jhCode[2];
             char jhCode2[2];
-            int outputByte = 0x8003 + outputPos/3;
+            int outputByte = START_ADDR + outputPos/3;
 
             sprintf(jhCode, "%02X", outputByte & 0xFF);
             sprintf(jhCode2, "%02X", (outputByte >> 8) & 0xFF);
@@ -234,7 +236,7 @@ void unbranch(isElse) {
                 else outputPos += sprintf(output + outputPos, "C9 %02X ", var2Addr);
             }
 
-            int addr = 0x8003 + branches[current_branch].bytePos;
+            int addr = START_ADDR + branches[current_branch].bytePos;
             if (branches[current_branch].loopCond[1] == 1) {
                 outputPos += sprintf(output + outputPos, "D0 03 4C %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
             } else if (branches[current_branch].loopCond[1] == 2) {
@@ -263,6 +265,11 @@ const char *rxlib[] = {
 };
 
 int parseToken(char *token) {
+    if (outputPos/3 > 0x3FF0) {
+        printf("\033[31mRail compile failure: Output size exceeds 16KB cartridge size!\033[0m\n");
+        return -1;
+    }
+
     if (strcmp(token, ";") == 0) {
         if (isFunc) outputPos += sprintf(output + outputPos, "%s", funcCallBuffer);
         newCall = true;
@@ -427,7 +434,7 @@ int parseToken(char *token) {
         if (strncmp(call, "main", 4) == 0) {
             if (!inFunc) {
                 inMain = true;
-                mainAddr = 0x8003 + outputPos/3;
+                mainAddr = START_ADDR + outputPos/3;
             } else {
                 printf("\033[31mRail compile failure: expected 'return' to end function before 'main' at line %d\033[0m\n", line);
                 return -1;
@@ -892,18 +899,16 @@ int parseToken(char *token) {
                 } else {
                     outputPos += sprintf(output + outputPos,
                         "AC %02X %02X " //LDY ycoord
-                        "A9 00 "         //LDA #0
+                        "A9 00 "        //LDA #0
                         "85 00 "        //STA $00
                         "85 01 "        //STA $01
 
-                        "A5 00 "        //LDA $00
                         "18 "           //CLC
                         "69 5A "        //ADC #90
-                        "85 00 "        //STA $00
                         "90 02 "        //BCC 02
-                        "E6 01 "         //INC $01
+                        "E6 01 "        //INC $01
                         "88 "           //DEY
-                        "D0 F2 "        //BNE F2
+                        "D0 F6 "        //BNE F6
 
                         "18 "           //CLC
                         "6D %02X %02X " //ADC xcoord
@@ -1234,7 +1239,7 @@ int main() {
 
                     printf("%s\n", output);
 
-                    int outputSize = 0;
+                    int outputSize = 0x4000;
                     FILE *binary = fopen(compFileName, "wb");
 
                     unsigned char low  = mainAddr & 0xFF;
@@ -1254,7 +1259,7 @@ int main() {
                     }
 
                     bytes[0x7FFC] = 0x00;
-                    bytes[0x7FFD] = 0x80;
+                    bytes[0x7FFD] = 0xC0;
 
                     bytes[0x7FFE] = interruptAddr & 0xFF;
                     bytes[0x7FFF] = (interruptAddr >> 8) & 0xFF;

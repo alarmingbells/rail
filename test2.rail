@@ -1,8 +1,0 @@
-function test:
-    if 100 == 100:
-    end;
-return 0;
-
-main:
-    #test;
-end;

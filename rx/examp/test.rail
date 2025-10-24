@@ -1,3 +1,6 @@
 main:
-    
+    var vari 0;
+    if vari == vari:
+        sleep 20;
+    end;
 end;

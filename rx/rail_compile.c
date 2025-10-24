@@ -746,22 +746,17 @@ int parseToken(char *token) {
 
         } else if (strcmp(call, "if") == 0) {
             if (argCount == 1) {
-                char *endptr;
-                buffer = strtol(stoken, &endptr, 10);
-                strcpy(cbuffer3, "A9");
-                if (*endptr != '\0') {
-                    int varIdx = findVariable(stoken);
-                    int arrIdx = findArray(stoken);
-                    if (varIdx != -1) {
-                        strcpy(cbuffer, "AD");
-                        buffer = vars[varIdx].address;
-                    } else if (arrIdx != -1) {
-                        strcpy(cbuffer, "AD");
-                        buffer = (arrays[arrIdx].address + arrayIndex);
-                    } else {
-                        error(2, stoken);
-                        return -1;
-                    }
+                int varIdx = findVariable(stoken);
+                int arrIdx = findArray(stoken);
+                if (varIdx != -1) {
+                    strcpy(cbuffer, "AD");
+                    buffer = vars[varIdx].address;
+                } else if (arrIdx != -1) {
+                    strcpy(cbuffer, "AD");
+                    buffer = (arrays[arrIdx].address + arrayIndex);
+                } else {
+                    error(1, stoken);
+                    return -1;
                 }
             } else if (argCount == 2) {
                 if (strcmp(stoken, "==") == 0) {
@@ -1022,7 +1017,14 @@ int parseToken(char *token) {
                     error(2, stoken);
                     return -1;
                 }
-                outputPos += sprintf(output + outputPos, "A0 %02X A2 C8 CA D0 FD 88 D0 FA ", buffer);
+                outputPos += sprintf(output + outputPos,
+                    "A0 %02X "      //LDY time
+                    "A2 C8 "        //LDX #200
+                    "CA "           //DEX
+                    "D0 FD "        //BNE FD
+                    "88 "           //DEY
+                    "D0 FA "        //BNE FA
+                    , buffer);
             }
         } else if (strcmp(call, "bindPress") == 0) {
             if (argCount == 1) {

@@ -414,7 +414,7 @@ int parseToken(char *token) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
             "29 01 "    //AND #01
-            "85 00 02"  //STA $0200
+            "85 00 02 "  //STA $0200
         );
     }
     if (strcmp(stoken, "p1Down") == 0) {
@@ -422,7 +422,7 @@ int parseToken(char *token) {
             "AD 00 80 " //LDA $8000 (controller register)
             "29 01 "    //AND #02
             "4A "       //LSR
-            "85 01 02"  //STA $0201
+            "85 01 02 "  //STA $0201
         );
     }
     if (strcmp(stoken, "p1Left") == 0) {
@@ -431,7 +431,7 @@ int parseToken(char *token) {
             "29 04 "    //AND #04
             "4A "       //LSR
             "4A "       //LSR
-            "85 02 02"  //STA $0202
+            "85 02 02 "  //STA $0202
         );
     }
     if (strcmp(stoken, "p1Right") == 0) {
@@ -441,7 +441,7 @@ int parseToken(char *token) {
             "4A "       //LSR
             "4A "       //LSR
             "4A "       //LSR
-            "85 02 03"  //STA $0203
+            "85 02 03 "  //STA $0203
         );
     }
 

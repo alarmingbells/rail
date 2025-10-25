@@ -1,7 +1,6 @@
 function init:
     var headx 45;
     var heady 45;
-    var dir 0;
     var length 3;
     arr segments 200; 
     arr segmentsx 200; 
@@ -30,16 +29,16 @@ main:
     #init;
     #clearRV;
     while running == 1:
-        if dir == 0:
+        if p1Right == 0:
             addto headx 1;
         end; 
-        if dir == 1:
+        if p1Left == 1:
             subfrom headx 1;
         end; 
-        if dir == 2:
+        if p1Down == 2:
             subfrom heady 1;
         end; 
-        if dir == 3:
+        if p1Up == 3:
             addto heady 1;
         end; 
         if applex == headx:

@@ -9,6 +9,7 @@
 bool newCall = true;
 char call[32];
 int line = 1;
+int col = 0;
 
 bool inMain = false;
 bool inFunc = false;
@@ -89,49 +90,49 @@ int error(int type, char *token) {
 
     switch (type) {
         case 1:
-            printf("\n\033[31mRail compile failure: '%s' is undefined at line %d\n(error code 1)\033[0m\n", token, line);
+            printf("\n\033[31mRail compile failure: '%s' is undefined at line %d, column %d\n(error code 1)\033[0m\n", token, line, col);
             break;
         case 2:
-            printf("\n\033[31mRail compile failure: Expected integer value, got '%s'.\n(error code 2)\033[0m\n", token);
+            printf("\n\033[31mRail compile failure: Expected integer value, got '%s' at line %d, column %d\n(error code 2)\033[0m\n", token, line, col);
             break;
         case 3:
             printf("\n\033[31mRail compile failure: Program output exceeds 16KB cartridge limit!\n(error code 3)\033[0m\n");
             break;
         case 4:
-            printf("\n\033[31mRail compile failure: Invalid keyword '%s' at line %d\n(error code 4)\033[0m\n", token, line);
+            printf("\n\033[31mRail compile failure: Invalid keyword '%s' at line %d, column %d\n(error code 4)\033[0m\n", token, line, col);
             break;
         case 5:
-            printf("\n\033[31mRail compile failure: Unexpected argument '%s' at line %d\n(error code 5)\033[0m\n", token, line);
+            printf("\n\033[31mRail compile failure: Unexpected argument '%s' at line %d, column %d\n(error code 5)\033[0m\n", token, line, col);
             break;
         case 6:
-            printf("\n\033[31mRail compile failure: Undefined logic symbol '%s' at line %d\n(error code 6)\033[0m\n", token, line);
+            printf("\n\033[31mRail compile failure: Undefined logic symbol '%s' at line %d, column %d\n(error code 6)\033[0m\n", token, line, col);
             break;
         case 7:
-            printf("\n\033[31mRail compile failure: Undefined colour symbol '%s' at line %d\n(error code 7)\033[0m\n", token, line);
+            printf("\n\033[31mRail compile failure: Undefined colour symbol '%s' at line %d, column %d\n(error code 7)\033[0m\n", token, line, col);
             break;
         case 8:
-            printf("\n\033[31mRail compile failure: Expected ';' before '%s' at line %d\n(error code 8)\033[0m\n", token, line);
+            printf("\n\033[31mRail compile failure: Expected ';' before '%s' at line %d, column %d\n(error code 8)\033[0m\n", token, line, col);
             break;
         case 9:
-            printf("\n\033[31mRail compile failure: Expected 'return' to close function before 'main' at line %d\n(error code 9)\033[0m\n", line);
+            printf("\n\033[31mRail compile failure: Expected 'return' to close function before 'main' at line %d, column %d\n(error code 9)\033[0m\n", line, col);
             break;
         case 10:
-            printf("\n\033[31mRail compile failure: Call '%s' has no parent function at line %d\n(error code 10)\033[0m\n", token, line);
+            printf("\n\033[31mRail compile failure: Call '%s' has no parent function at line %d, column %d\n(error code 10)\033[0m\n", token, line, col);
             break;
         case 11:
-            printf("\n\033[31mRail compile failure: '%s' is already defined at line %d\n(error code 11)\033[0m\n", token, line);
+            printf("\n\033[31mRail compile failure: '%s' is already defined at line %d, column %d\n(error code 11)\033[0m\n", token, line, col);
             break;
         case 12:
-            printf("\n\033[31mRail compile failure: Double-nesting is not allowed at line %d\n(error code 12)\033[0m\n", line);
+            printf("\n\033[31mRail compile failure: Double-nesting is not allowed at line %d, column %d\n(error code 12)\033[0m\n", line, col);
             break;
         case 13:
-            printf("\n\033[31mRail compile failure: branch(es) unclosed at line %d\n(error code 13)\033[0m\n", line);
+            printf("\n\033[31mRail compile failure: branch(es) unclosed at line %d, column %d\n(error code 13)\033[0m\n", line, col);
             break;
         case 14:
-            printf("\n\033[31mRail compile failure: Invalid pixel value at line %d\n(error code 14)\033[0m\n", line);
+            printf("\n\033[31mRail compile failure: Invalid pixel value at line %d, column %d\n(error code 14)\033[0m\n", line, col);
             break;
         case 15:
-            printf("\n\033[31mRail compile failure: String exceeds 16 byte buffer limit at line %d\n(error code 15)\033[0m\n", line);
+            printf("\n\033[31mRail compile failure: String exceeds 16 byte buffer limit at line %d, column %d\n(error code 15)\033[0m\n", line, col);
             break;
         
     }
@@ -1132,7 +1133,11 @@ int compile(char *code) {
         bool ignoring = false;
         char ch = code[c];
 
-        if (ch == '\n') line++;
+        col++;
+        if (ch == '\n') {
+            line++;
+            col = 1;
+        }
         if (ch == '/') {inComment = !inComment; continue;}
         if (inComment) continue;
 

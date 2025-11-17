@@ -1,0 +1,33 @@
+//
+//Written by GowinSynthesis
+//Tool Version "V1.9.12 (64-bit)"
+//Thu Oct 30 17:49:54 2025
+
+//Source file index table:
+//file0 "\C:/Users/funlu/Desktop/rail/railview/fpga/src/source.v"
+`timescale 100 ps/100 ps
+module top (
+  clk,
+  PALATTE_SWITCH,
+  ADDRESS,
+  COLOUR,
+  IE
+)
+;
+input clk;
+input PALATTE_SWITCH;
+input [12:0] ADDRESS;
+input [1:0] COLOUR;
+input IE;
+wire VCC;
+wire GND;
+  VCC VCC_cZ (
+    .V(VCC)
+);
+  GND GND_cZ (
+    .G(GND)
+);
+  GSR GSR (
+    .GSRI(VCC) 
+);
+endmodule /* top */

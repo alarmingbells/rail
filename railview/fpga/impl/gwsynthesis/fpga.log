@@ -1,0 +1,53 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file 'C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v'
+WARN  (EX3073) : Port 'colour_low' remains unconnected for this instance("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":83)
+WARN  (EX3073) : Port 'addr_internal' remains unconnected for this instance("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+Compiling module 'top'("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":74)
+Compiling module 'palatte'("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":24)
+Compiling module 'frame_buffer'("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":2)
+Extracting RAM for identifier 'buffer'("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":10)
+WARN  (EX2565) : Input 'OE' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":83)
+WARN  (EX2565) : Input 'colour_low[1]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":83)
+WARN  (EX2565) : Input 'colour_low[0]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":83)
+WARN  (EX2565) : Input 'addr_internal[12]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[11]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[10]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[9]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[8]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[7]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[6]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[5]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[4]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[3]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[2]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[1]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'addr_internal[0]' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (EX2565) : Input 'OE' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+NOTE  (EX0101) : Current top module is "top"
+[5%] Running netlist conversion ...
+WARN  (CV0016) : Input clk is unused("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":74)
+WARN  (CV0016) : Input PALATTE_SWITCH is unused("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":75)
+WARN  (CV0016) : Input ADDRESS is unused("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":76)
+WARN  (CV0016) : Input COLOUR is unused("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":77)
+WARN  (CV0016) : Input IE is unused("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":78)
+Running device independent optimization ...
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+[30%] Inferring Phase 0 completed
+[40%] Inferring Phase 1 completed
+[50%] Inferring Phase 2 completed
+[55%] Inferring Phase 3 completed
+Running technical mapping ...
+[60%] Tech-Mapping Phase 0 completed
+[65%] Tech-Mapping Phase 1 completed
+[75%] Tech-Mapping Phase 2 completed
+[80%] Tech-Mapping Phase 3 completed
+[90%] Tech-Mapping Phase 4 completed
+WARN  (NL0002) : The module "frame_buffer" instantiated to "buffer" is swept in optimizing("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":90)
+WARN  (NL0002) : The module "palatte" instantiated to "palatte_1" is swept in optimizing("C:\Users\funlu\Desktop\rail\railview\fpga\src\source.v":83)
+[95%] Generate netlist file "C:\Users\funlu\Desktop\rail\railview\fpga\impl\gwsynthesis\fpga.vg" completed
+[100%] Generate report file "C:\Users\funlu\Desktop\rail\railview\fpga\impl\gwsynthesis\fpga_syn.rpt.html" completed
+GowinSynthesis finish

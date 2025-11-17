@@ -1,0 +1,28 @@
+[
+ {
+  "InstFile" : "C:/Users/funlu/Desktop/rail/railview/fpga/src/source.v",
+  "InstLine" : 74,
+  "InstName" : "top",
+  "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/fpga/src/source.v",
+  "ModuleLine" : 74,
+  "ModuleName" : "top",
+  "SubInsts" : [
+   {
+    "InstFile" : "C:/Users/funlu/Desktop/rail/railview/fpga/src/source.v",
+    "InstLine" : 80,
+    "InstName" : "palatte_1",
+    "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/fpga/src/source.v",
+    "ModuleLine" : 24,
+    "ModuleName" : "palatte"
+   },
+   {
+    "InstFile" : "C:/Users/funlu/Desktop/rail/railview/fpga/src/source.v",
+    "InstLine" : 85,
+    "InstName" : "buffer",
+    "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/fpga/src/source.v",
+    "ModuleLine" : 2,
+    "ModuleName" : "frame_buffer"
+   }
+  ]
+ }
+]

@@ -1,0 +1,70 @@
+[
+ {
+  "InstFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/video_top.v",
+  "InstLine" : 1,
+  "InstName" : "video_top",
+  "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/video_top.v",
+  "ModuleLine" : 1,
+  "ModuleName" : "video_top",
+  "SubInsts" : [
+   {
+    "InstFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/video_top.v",
+    "InstLine" : 87,
+    "InstName" : "testpattern_inst",
+    "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/testpattern.v",
+    "ModuleLine" : 1,
+    "ModuleName" : "testpattern"
+   },
+   {
+    "InstFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/video_top.v",
+    "InstLine" : 117,
+    "InstName" : "fb",
+    "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/source.v",
+    "ModuleLine" : 2,
+    "ModuleName" : "frame_buffer"
+   },
+   {
+    "InstFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/video_top.v",
+    "InstLine" : 127,
+    "InstName" : "sw1",
+    "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/source.v",
+    "ModuleLine" : 25,
+    "ModuleName" : "palette_sw"
+   },
+   {
+    "InstFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/video_top.v",
+    "InstLine" : 145,
+    "InstName" : "u_tmds_rpll",
+    "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/gowin_rpll/TMDS_rPLL.v",
+    "ModuleLine" : 9,
+    "ModuleName" : "TMDS_rPLL"
+   },
+   {
+    "InstFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/video_top.v",
+    "InstLine" : 162,
+    "InstName" : "DVI_TX_Top_inst",
+    "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/dvi_tx/dvi_tx.v",
+    "ModuleLine" : 1072,
+    "ModuleName" : "DVI_TX_Top",
+    "SubInsts" : [
+     {
+      "InstFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/dvi_tx/dvi_tx.v",
+      "InstLine" : 1103,
+      "InstName" : "rgb2dvi_inst",
+      "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/dvi_tx/dvi_tx.v",
+      "ModuleLine" : 10,
+      "ModuleName" : "~rgb2dvi.DVI_TX_Top"
+     }
+    ]
+   },
+   {
+    "InstFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/video_top.v",
+    "InstLine" : 179,
+    "InstName" : "key_led_ctrl_inst",
+    "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/key_led_ctrl.v",
+    "ModuleLine" : 1,
+    "ModuleName" : "key_led_ctrl"
+   }
+  ]
+ }
+]

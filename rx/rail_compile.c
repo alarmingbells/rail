@@ -571,6 +571,7 @@ int parseToken(char *token) {
             } else if (strcmp(call, "addto") == 0) {
             } else if (strcmp(call, "subfrom") == 0) {
             } else if (strcmp(call, "setPx") == 0) {
+            } else if (strcmp(call, "setBg") == 0) {
             } else if (strcmp(call, "sleep") == 0) {
             } else if (strcmp(call, "bindPress") == 0) {
                     pressDefined = true;
@@ -1009,7 +1010,64 @@ int parseToken(char *token) {
                         buffer & 0xFF, (buffer >> 8) & 0xFF, buffer2 & 0xFF, (buffer2 >> 8) & 0xFF, buffer3 & 0xFF);
                 }
             }
-            
+        
+        } else if (strcmp(call, "setBg") == 0) {
+            if (argCount == 1) {
+                char *endptr;
+                buffer = strtol(stoken, &endptr, 10);
+                if (*endptr != '\0') {
+                    error(2, stoken);
+                    return -1;
+                }
+            } else if (argCount == 2) {
+                char *endptr;
+                buffer2 = strtol(stoken, &endptr, 10);
+                if (*endptr != '\0') {
+                    error(2, stoken);
+                    return -1;
+                }
+            } else if (argCount == 3) {
+                char *endptr;
+                buffer3 = strtol(stoken, &endptr, 10);
+                if (*endptr != '\0') {
+                    error(2, stoken);
+                    return -1;
+                }
+                outputPos += sprintf(output + outputPos,
+                    "A9 %02X "      //LDA buffer 00000011
+                    "8D F3 5F "     //STA 4000 + 1FF4
+                    "A9 %02X "      //LDA buffer 00001100
+                    "8D F4 5F "     //STA 4000 + 1FF5
+                    "A9 %02X "      //LDA buffer 00110000
+                    "8D F5 5F "     //STA 4000 + 1FF6
+                    "A9 %02X "      //LDA buffer 11000000
+                    "8D F6 5F "     //STA 4000 + 1FF7
+
+                    "A9 %02X "      //LDA buffer2 00000011
+                    "8D F8 5F "     //STA 4000 + 1FF8
+                    "A9 %02X "      //LDA buffer2 00001100
+                    "8D F9 5F "     //STA 4000 + 1FF9
+                    "A9 %02X "      //LDA buffer2 00110000
+                    "8D FA 5F "     //STA 4000 + 1FFA
+                    "A9 %02X "      //LDA buffer2 11000000
+                    "8D FB 5F "     //STA 4000 + 1FFB
+
+                    "A9 %02X "      //LDA buffer3 00000011
+                    "8D FC 5F "     //STA 4000 + 1FFC
+                    "A9 %02X "      //LDA buffer3 00001100
+                    "8D FD 5F "     //STA 4000 + 1FFD
+                    "A9 %02X "      //LDA buffer3 00110000
+                    "8D FE 5F "     //STA 4000 + 1FFE
+                    "A9 %02X "      //LDA buffer3 11000000
+                    "8D FF 5F ",    //STA 4000 + 1FFF
+                buffer & 0x03, (buffer >> 2) & 0x03, (buffer >> 4) & 0x03, (buffer >> 6) & 0x03,
+                buffer2 & 0x03, (buffer2 >> 2) & 0x03, (buffer2 >> 4) & 0x03, (buffer2 >> 6) & 0x03,
+                buffer3 & 0x03, (buffer3 >> 2) & 0x03, (buffer3 >> 4) & 0x03, (buffer3 >> 6) & 0x03);
+            } else {
+                error(5, stoken);
+                return -1;
+            }
+
         } else if (strcmp(call, "sleep") == 0) {
             if (argCount == 1) {
                 char *endptr;

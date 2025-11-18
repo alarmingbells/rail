@@ -13,9 +13,9 @@ module frame_buffer (input clk,
         if (!IE) 
             buffer[address] <= colour;
 
-        bgcolour[7:0] <= {buffer[13'h1FFF], buffer[13'h1FFD], buffer[13'h1FFC], buffer[13'h1FFB]};
-        bgcolour[15:8] <= {buffer[13'h1FFA], buffer[13'h1FF9], buffer[13'h1FF8], buffer[13'h1FF7]};
-        bgcolour[23:16] <= {buffer[13'h1FF6], buffer[13'h1FF5], buffer[13'h1FF4], buffer[13'h1FF3]};
+        bgcolour[7:0] <= {buffer[13'h1FFF], buffer[13'h1FFE], buffer[13'h1FFD], buffer[13'h1FFC]};
+        bgcolour[15:8] <= {buffer[13'h1FFB], buffer[13'h1FFA], buffer[13'h1FF9], buffer[13'h1FF8]};
+        bgcolour[23:16] <= {buffer[13'h1FF7], buffer[13'h1FF6], buffer[13'h1FF5], buffer[13'h1FF4]};
 
         dataOut <= buffer[addr_internal];
     end

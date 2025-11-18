@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Module name="video_top" Register="25" Lut="58" T_Register="295(25)" T_Alu="75(0)" T_Lut="550(58)" T_MULTADDALU18X18="1(0)" T_Bsram="1(0)">
+<Module name="video_top" Register="25" Lut="57" T_Register="295(25)" T_Alu="75(0)" T_Lut="548(57)" T_MULTADDALU18X18="1(0)" T_Bsram="1(0)">
  <SubModule name="testpattern_inst" Register="127" Alu="6" Lut="200" MULTADDALU18X18="1" T_Register="127(127)" T_Alu="6(6)" T_Lut="200(200)" T_MULTADDALU18X18="1(1)"/>
- <SubModule name="fb" Register="48" Lut="23" Bsram="1" T_Register="48(48)" T_Lut="23(23)" T_Bsram="1(1)"/>
+ <SubModule name="fb" Register="48" Lut="22" Bsram="1" T_Register="48(48)" T_Lut="22(22)" T_Bsram="1(1)"/>
  <SubModule name="sw1" Register="22" Lut="40" T_Register="22(22)" T_Lut="40(40)"/>
  <SubModule name="u_tmds_rpll"/>
  <SubModule name="DVI_TX_Top_inst" Register="73" Alu="69" Lut="229" T_Register="73(73)" T_Alu="69(69)" T_Lut="229(229)"/>

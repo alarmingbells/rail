@@ -1,3 +1,8 @@
 main:
-    setBg 1 1 1;
+    #clear;
+    setPx 44 45 r;
+    setPx 45 45 r;
+    setPx 46 45 r;
+
+    #reset;
 end;

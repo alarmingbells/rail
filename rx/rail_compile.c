@@ -139,17 +139,17 @@ int error(int type, char *token) {
     return 0;
 }
 
-int warn(int type) {
+int warn(int type, const char *token) {
     //1 - out of memory
     //2 - unmatched end
 
     warned = true;
     switch (type) {
         case 1:
-            printf("\033[33mWarning: Variable count exceeds memory capacity, please reduce the amount of defined variables!\033[0m\n");
+            printf("\033[33mWarning: Variable '%s' is ignored due to a lack of memory (variables exceed 15.5KB).\n(warning code 1)\033[0m\n", token);
             break;
         case 2:
-            printf("\033[33mWarning: unmatched 'end' was ignored at line %d\033[0m\n", line);
+            printf("\033[33mWarning: unmatched 'end' is ignored at line %d\n(warning code 2)\033[0m\n", line);
             break;
     }
     return 0;
@@ -157,7 +157,7 @@ int warn(int type) {
 
 int addVariable(const char *name) {
     if (nextHeapAddr >= 0x3FFF) {
-        warn(1);
+        warn(1, name);
         return -1;
     }
 
@@ -170,7 +170,7 @@ int addVariable(const char *name) {
 
 int addArray(const char *name, int size) {
     if (nextHeapAddr >= (0x3FFF-size)) {
-        warn(1);
+        warn(1, name);
         return -1;
     }
 
@@ -336,19 +336,25 @@ void unbranch(isElse) {
         }
         current_branch = branches[current_branch].parent;
     } else {
-        if (!inMain) warn(2);
+        if (!inMain) warn(2, "");
     }
 }
 
 const char *rxlib[] = {
-    "clearRV",
+    "clear",
     "A2 00 "    //LDX #0
     "A0 40 "    //LDY #40
-    "99 00 40 " //STA 4000, Y
+    "99 00 40 " //STA $4000, Y
     "E8 "       //INX
     "D0 FA "    //BNE loop
     "C8 "       //INY
-    "D0 F7 "    //BNE loop,
+    "D0 F7 ",   //BNE loop,
+
+    "reset",
+    "A2 00 "    //LDX #0
+    "9A "       //TXS
+    "78 "       //SEI
+    "4C 00 C0 " //JMP $C000
 };
 
 int parseToken(char *token) {

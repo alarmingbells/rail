@@ -27,7 +27,7 @@ return 0;
 
 main:
     #init;
-    #clearRV;
+    #clear;
     while running == 1:
         if p1Right == 0:
             addto headx 1;

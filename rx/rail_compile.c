@@ -45,6 +45,10 @@ int strLength = 0;
 
 bool warned = false;
 
+bool inBytes = false;
+char bytebuffer[8192];
+int bytebufferPos = 0;
+
 typedef struct {
     char name[32];
     int address;
@@ -142,6 +146,7 @@ int error(int type, char *token) {
 int warn(int type, const char *token) {
     //1 - out of memory
     //2 - unmatched end
+    //3 - bytecode used
 
     warned = true;
     switch (type) {
@@ -150,6 +155,9 @@ int warn(int type, const char *token) {
             break;
         case 2:
             printf("\033[33mWarning: unmatched 'end' is ignored at line %d\n(warning code 2)\033[0m\n", line);
+            break;
+        case 3:
+            printf("\033[33mWarning: User-written bytecode is not checked by compiler, review output to ensure functionality.\n(warning code 3)\033[0m\n");
             break;
     }
     return 0;
@@ -1225,6 +1233,19 @@ int compile(char *code) {
 
         if (ch == ';' && inNest) nestCallEnded = true;
 
+        if (ch == '|') {
+            if (!inBytes) {
+                warn(3, "");
+                inBytes = true;
+                memset(bytebuffer, 0, sizeof(bytebuffer));
+            } else {
+                inBytes = false;
+                strcpy(token, "");
+                outputPos += sprintf(output + outputPos, "%s", bytebuffer);
+            }
+            continue;
+        }
+
         if (ch == '(') {
             ignoring = true;
             if (!newCall) {
@@ -1302,14 +1323,26 @@ int compile(char *code) {
             continue;
         }
 
-        if (isspace(ch) && !inComment && !inString) {
+        if (inBytes) {
+            if (isxdigit((unsigned char)ch)) {
+                if (bytebufferPos < (int)sizeof(bytebuffer) - 1) {
+                    if (bytebufferPos % 3 == 2 && bytebufferPos != 0) {
+                        bytebuffer[bytebufferPos++] = ' ';
+                    }
+                    bytebuffer[bytebufferPos++] = ch;
+                    bytebuffer[bytebufferPos] = '\0';
+                }
+            }
+            continue;
+        }
+        if (isspace(ch) && !inComment && !inString && !inBytes) {
             if (tokenIdx > 0 && strcmp(token, "") != 0) {
                 token[tokenIdx] = '\0';
                 if (parseToken(token) == -1) return -1;
                 tokenIdx = 0;
             }
         } else {
-            if (tokenIdx < (int)sizeof(token) - 1 && !ignoring) {
+            if (tokenIdx < (int)sizeof(token) - 1 && !ignoring && !inBytes) {
                 token[tokenIdx++] = ch;
             }
         }

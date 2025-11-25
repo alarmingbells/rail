@@ -75,7 +75,7 @@ int arrayCount = 0;
 Function funcs[8];
 int funcCount = 0;
 
-int error(int type, char *token) {
+int throw(int type, char *token) {
     //1 - undefined
     //2 - expected integer
     //3 - output overflow
@@ -367,7 +367,7 @@ const char *rxlib[] = {
 
 int parseToken(char *token) {
     if (outputPos/3 > 0x3FF0) {
-        error(3, 0);
+        throw(3, 0);
         return -1;
     }
 
@@ -411,7 +411,7 @@ int parseToken(char *token) {
                         arrayIndexVar = true;
                         arrayIndex = vars[varIdx].address;
                     } else {
-                        error(1, stoken);
+                        throw(1, stoken);
                         return -1;
                     }
                 } else {
@@ -537,7 +537,7 @@ int parseToken(char *token) {
                 inMain = true;
                 mainAddr = START_ADDR + outputPos/3;
             } else {
-                error(9, 0);
+                throw(9, 0);
                 return -1;
             }
         } else {
@@ -545,7 +545,7 @@ int parseToken(char *token) {
                 if (strcmp(call, "function") == 0) {
                     inFunc = true;
                 } else {
-                    error(10, call);
+                    throw(10, call);
                     return -1;
                 }
             } else if (call[0] == '#') {
@@ -565,7 +565,7 @@ int parseToken(char *token) {
                         int addr = funcs[funcIdx].address;
                         outputPos += sprintf(output + outputPos, "20 %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
                     } else {
-                        error(1, call);
+                        throw(1, call);
                         return -1;
                     }
                     strcpy(funcCallBuffer, "");
@@ -605,7 +605,7 @@ int parseToken(char *token) {
                 }
                 outputPos += sprintf(output + outputPos, "BD %02X %02X ", VAddress & 0xFF, (VAddress >> 8) & 0xFF);
             } else {
-                error(4, call);
+                throw(4, call);
                 return -1;
             }                
         }
@@ -642,7 +642,7 @@ int parseToken(char *token) {
             if (argCount == 1) {
                 addFunc(stoken);
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
         } else if (strcmp(call, "return") == 0) {
@@ -653,7 +653,7 @@ int parseToken(char *token) {
                     if (*endptr != '\0') {
                         int varIdx = findVariable(stoken);
                         if (varIdx == -1) {
-                            error(1, stoken);
+                            throw(1, stoken);
                             return -1;
                         } else {
                             outputPos += sprintf(output + outputPos, "AD %02X %02X ", vars[varIdx].address & 0xFF, (vars[varIdx].address >> 8) & 0xFF);
@@ -668,7 +668,7 @@ int parseToken(char *token) {
                 }
                 inFunc = false;
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
 
@@ -680,7 +680,7 @@ int parseToken(char *token) {
                     if (!arrayIndexVar) buffer2 = 1; else buffer2 = 2;
                     buffer3 = arrayIndex;
                     if (currentVarIdx == -1) {
-                        error(1, stoken);
+                        throw(1, stoken);
                         return -1;
                     }
                 } else {
@@ -691,7 +691,7 @@ int parseToken(char *token) {
                     char *endptr;
                     buffer = strtol(stoken, &endptr, 10);
                     if (*endptr != '\0') {
-                        error(2, stoken);
+                        throw(2, stoken);
                         return -1;
                     }
                     if (buffer2 == 0) {
@@ -708,7 +708,7 @@ int parseToken(char *token) {
                     outputPos += sprintf(output + outputPos, "9D %02X %02X ", arrays[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
                 }
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
 
@@ -717,7 +717,7 @@ int parseToken(char *token) {
                 if (findVariable(stoken) == -1) {
                     currentVarIdx = addVariable(stoken);
                 } else {
-                    error(11, stoken);
+                    throw(11, stoken);
                     return -1;
                 }
             } else if (argCount == 2) {
@@ -725,14 +725,14 @@ int parseToken(char *token) {
                     char *endptr;
                     int value = strtol(stoken, &endptr, 10);
                     if (*endptr != '\0') {
-                        error(2, stoken);
+                        throw(2, stoken);
                         return -1;
                     }
                     outputPos += sprintf(output + outputPos, "A9 %02X ", value);
                 }
                 outputPos += sprintf(output + outputPos, "8D %02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
 
@@ -741,7 +741,7 @@ int parseToken(char *token) {
                 if (findVariable(stoken) == -1) {
                     strcpy(cbuffer, stoken);
                 } else {
-                    error(11, stoken);
+                    throw(11, stoken);
                     return -1;
                 }
                 
@@ -749,14 +749,14 @@ int parseToken(char *token) {
                 char *endptr;
                 int value = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    error(2, stoken);
+                    throw(2, stoken);
                     return -1;
                 }
                 currentVarIdx = addArray(cbuffer, value);
                 outputPos += sprintf(output + outputPos, "A9 00 8D %02X %02X ", arrays[currentVarIdx].address & 0xFF, (arrays[currentVarIdx].address >> 8) & 0xFF);
                 
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
 
@@ -771,7 +771,7 @@ int parseToken(char *token) {
                     strcpy(cbuffer, "AD");
                     buffer = (arrays[arrIdx].address + arrayIndex);
                 } else {
-                    error(1, stoken);
+                    throw(1, stoken);
                     return -1;
                 }
             } else if (argCount == 2) {
@@ -791,7 +791,7 @@ int parseToken(char *token) {
                     buffer2 = 4;
                     strcpy(cbuffer2, "F0 05 90 03 4C ");
                 } else {
-                    error(6, stoken);
+                    throw(6, stoken);
                     return -1;
                 }
             } else if (argCount == 3) {
@@ -804,7 +804,7 @@ int parseToken(char *token) {
                         strcpy(cbuffer3, "CD");
                         buffer3 = vars[varIdx].address;
                     } else {
-                        error(2, stoken);
+                        throw(2, stoken);
                         return -1;
                     }
                 }
@@ -819,7 +819,7 @@ int parseToken(char *token) {
 
                 branch(outputPos/3);
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
 
@@ -829,7 +829,7 @@ int parseToken(char *token) {
                 if (varIdx != -1) {
                     buffer = vars[varIdx].address;
                 } else {
-                    error(1, stoken);
+                    throw(1, stoken);
                     return -1;
                 }
             } else if (argCount == 2) {
@@ -840,7 +840,7 @@ int parseToken(char *token) {
                 } else if (strcmp(stoken, "<") == 0) {
                     buffer2 = 3;
                 } else {
-                    error(6, stoken);
+                    throw(6, stoken);
                     return -1;
                 }
             } else if (argCount == 3) {
@@ -853,13 +853,13 @@ int parseToken(char *token) {
                     buffer3 = strtol(stoken, &endptr, 10);
 
                     if (*endptr != '\0') {
-                        error(1, stoken);
+                        throw(1, stoken);
                         return -1;
                     }
                     loopBranch(outputPos/3, buffer, buffer2, buffer3, true);
                 }
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
  
@@ -872,21 +872,21 @@ int parseToken(char *token) {
                 } else if (array != -1) {
                     buffer = arrays[array].address + arrayIndex;
                 } else {
-                    error(1, stoken);
+                    throw(1, stoken);
                     return -1;
                 }                
             } else if (argCount == 2) {
                 char *endptr;
                 buffer2 = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    error(2, stoken);
+                    throw(2, stoken);
                     return -1;
                 }
                 outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
                 outputPos += sprintf(output + outputPos, "18 69 %02X ", buffer2 & 0xFF);
                 outputPos += sprintf(output + outputPos, "8D %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
         } else if (strcmp(call, "subfrom") == 0) {
@@ -898,21 +898,21 @@ int parseToken(char *token) {
                 } else if (array != -1) {
                     buffer = arrays[array].address + arrayIndex;
                 } else {
-                    error(1, stoken);
+                    throw(1, stoken);
                     return -1;
                 }  
             } else if (argCount == 2) {
                 char *endptr;
                 buffer2 = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    error(2, stoken);
+                    throw(2, stoken);
                     return -1;
                 }
                 outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
                 outputPos += sprintf(output + outputPos, "38 E9 %02X ", buffer2 & 0xFF);
                 outputPos += sprintf(output + outputPos, "8D %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
         } else if (strcmp(call, "setPx") == 0) {
@@ -929,7 +929,7 @@ int parseToken(char *token) {
                         buffer = arrays[arrIdx].address + arrayIndex;
                         buffer3 = 1;
                     } else {
-                        error(1, stoken);
+                        throw(1, stoken);
                         return -1;
                     }
                 } else {
@@ -941,7 +941,7 @@ int parseToken(char *token) {
                 buffer2 = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
                     if (buffer3 != 1) {
-                        error(2, stoken);
+                        throw(2, stoken);
                         return -1;
                     }
                     int varIdx = findVariable(stoken);
@@ -953,12 +953,12 @@ int parseToken(char *token) {
                         buffer = arrays[arrIdx].address + arrayIndex;
                         buffer3 = 1;
                     } else {
-                        error(1, stoken);
+                        throw(1, stoken);
                         return -1;
                     }
                 } else {
                     if (buffer3 != 0) {
-                        error(1, stoken);
+                        throw(1, stoken);
                         return -1;
                     }
                 }
@@ -967,7 +967,7 @@ int parseToken(char *token) {
                 if (strcmp(stoken, "r") == 0 || strcmp(stoken, "g") == 0 || strcmp(stoken, "g") == 0 || strcmp(stoken, "b") == 0 || strcmp(stoken, "x") == 0) {
                     strcpy(cbuffer, stoken);
                 } else {
-                    error(7, stoken);
+                    throw(7, stoken);
                     return -1;
                 }
 
@@ -987,7 +987,7 @@ int parseToken(char *token) {
                 
                 if (isVariable == 0) {
                     if (buffer > 89 || buffer2 > 89) {
-                        error(14, 0);
+                        throw(14, 0);
                         return -1;
                     }
                     int addr = (buffer2*90) + (buffer) + 0x4000;
@@ -1030,21 +1030,21 @@ int parseToken(char *token) {
                 char *endptr;
                 buffer = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    error(2, stoken);
+                    throw(2, stoken);
                     return -1;
                 }
             } else if (argCount == 2) {
                 char *endptr;
                 buffer2 = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    error(2, stoken);
+                    throw(2, stoken);
                     return -1;
                 }
             } else if (argCount == 3) {
                 char *endptr;
                 buffer3 = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    error(2, stoken);
+                    throw(2, stoken);
                     return -1;
                 }
                 outputPos += sprintf(output + outputPos,
@@ -1078,7 +1078,7 @@ int parseToken(char *token) {
                 buffer2 & 0x03, (buffer2 >> 2) & 0x03, (buffer2 >> 4) & 0x03, (buffer2 >> 6) & 0x03,
                 buffer3 & 0x03, (buffer3 >> 2) & 0x03, (buffer3 >> 4) & 0x03, (buffer3 >> 6) & 0x03);
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
 
@@ -1087,7 +1087,7 @@ int parseToken(char *token) {
                 char *endptr;
                 buffer = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    error(2, stoken);
+                    throw(2, stoken);
                     return -1;
                 }
                 outputPos += sprintf(output + outputPos,
@@ -1106,7 +1106,7 @@ int parseToken(char *token) {
                     int addr = funcs[funcIdx].address;
                     interruptAddr = addr;
                 } else {
-                    error(1, stoken);
+                    throw(1, stoken);
                     return -1;
                 }
             }
@@ -1117,7 +1117,7 @@ int parseToken(char *token) {
                 } else if (strcmp(stoken, "-") == 0) {
                     buffer = 2;
                 } else {
-                    error(6, stoken);
+                    throw(6, stoken);
                     return -1;
                 }
             } else if (argCount == 2) {
@@ -1129,7 +1129,7 @@ int parseToken(char *token) {
                         buffer3 = 1;
                         buffer2 = vars[varIdx].address;
                     } else {
-                        error(1, stoken);
+                        throw(1, stoken);
                         return -1;
                     }
                 } else {
@@ -1153,12 +1153,12 @@ int parseToken(char *token) {
                     }
                 }
             } else {
-                error(5, stoken);
+                throw(5, stoken);
                 return -1;
             }
         } else if (isFunc) {
         } else {
-            error(1, stoken);
+            throw(1, stoken);
             return -1;
         }
     }
@@ -1210,7 +1210,13 @@ int compile(char *code) {
             line++;
             col = 1;
         }
-        if (ch == '/') {inComment = !inComment; continue;}
+        if (ch == '/' && code[c+1] == '/') {inComment = true; continue;}
+        if (ch == '\n') {
+            if (inComment) {
+                inComment = false;
+                continue;
+            }
+        }
         if (inComment) continue;
 
         if (ch == '"') {
@@ -1222,7 +1228,7 @@ int compile(char *code) {
 
         if (inString) {
             if (strPos > 15) {
-                error(15, 0);
+                throw(15, 0);
                 return -1;
             }
             outputPos += sprintf(output + outputPos, "A9 %02X 85 %02X ", (unsigned char)ch, 0xE0 + strPos);
@@ -1250,7 +1256,7 @@ int compile(char *code) {
             ignoring = true;
             if (!newCall) {
                 if (inNest) {
-                    error(12, 0);
+                    throw(12, 0);
                     return -1;
                 }
                 inNest = true;
@@ -1276,13 +1282,13 @@ int compile(char *code) {
                 argCount = 0;
                 strcpy(call, "");
             } else {
-                error(4, "(");
+                throw(4, "(");
                 return -1;
             }
         }
         if (ch == ')') {
             if (!nestCallEnded) {
-                error(8, ")");
+                throw(8, ")");
                 return -1;
             }
             nestCallEnded = false;
@@ -1317,7 +1323,7 @@ int compile(char *code) {
                 }
                 
             } else {
-                error(8, ")");
+                throw(8, ")");
                 return -1;
             }
             continue;
@@ -1361,7 +1367,7 @@ int compile(char *code) {
         }
         return 0;
     }
-    error(13, 0);
+    throw(13, 0);
     return -1;
 }
 

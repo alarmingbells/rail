@@ -1,0 +1,13 @@
+clear:
+A2 00
+A0 40
+99 00 40
+E8
+DO FA
+C8
+DO F7
+:reset:
+A2 00
+9A
+78
+4C 00 C0:

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <windows.h>
 
 #define START_ADDR 0xC003
 
@@ -137,6 +138,9 @@ int throw(int type, char *token) {
             break;
         case 15:
             printf("\n\033[31mRail compile failure: String exceeds 16 byte buffer limit at line %d, column %d\n(error code 15)\033[0m\n", line, col);
+            break;
+        case 16:
+            printf("\n\033[31mRail compile failure: Too many library entries! (>256)\n(error code 16)\033[0m\n", line, col);
             break;
         
     }
@@ -348,22 +352,98 @@ void unbranch(isElse) {
     }
 }
 
-const char *rxlib[] = {
-    "clear",
-    "A2 00 "    //LDX #0
-    "A0 40 "    //LDY #40
-    "99 00 40 " //STA $4000, Y
-    "E8 "       //INX
-    "D0 FA "    //BNE loop
-    "C8 "       //INY
-    "D0 F7 ",   //BNE loop,
+typedef struct LibFunction {
+    char function[32];
+    char code[512];
+} LibFunction;
 
-    "reset",
-    "A2 00 "    //LDX #0
-    "9A "       //TXS
-    "78 "       //SEI
-    "4C 00 C0 " //JMP $C000
-};
+LibFunction libraries[256];
+int libFunctionCount = 0;
+
+void addLibFunction(const char *function, const char *code) {
+    libFunctionCount++;
+    if (libFunctionCount < 255) {
+        strncpy(libraries[libFunctionCount].function, function, 31);
+        strncpy(libraries[libFunctionCount].code, code, 511);
+        libraries[libFunctionCount].code[511] = '\0';
+        libraries[libFunctionCount].function[31] = '\0';
+    } else {
+        throw(16, "");
+    }
+}
+
+void loadLibraries() {
+    char searchPath[512];
+    snprintf(searchPath, sizeof(searchPath), "libraries\\*.raillib");
+
+    WIN32_FIND_DATAA fd;
+    HANDLE hFind = FindFirstFileA(searchPath, &fd);
+
+    if (hFind == INVALID_HANDLE_VALUE) {
+        printf("'libraries' directory is empty or doesn't exist, no libraries are loaded.\n");
+        return;
+    }
+
+    do {
+        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            char filepath[512];
+            snprintf(filepath, sizeof(filepath), "libraries\\%s", fd.cFileName);
+
+            FILE *f = fopen(filepath, "r");
+            if (!f) continue;
+
+            fseek(f, 0, SEEK_END);
+            long size = ftell(f);
+            rewind(f);
+
+            char *content = malloc(size + 1);
+            fread(content, 1, size, f);
+            content[size] = '\0';
+            fclose(f);
+
+            int inCode = false;
+            int segmentPos = 0;
+
+            char functionBuffer[32];
+            char codeBuffer[512];
+
+            for (int i = 0; i < size; i++) {
+                if (!inCode) {
+                    if (content[i] == ':') {
+                        inCode = true;
+                        segmentPos = 0;
+                        continue;
+                    }
+                    functionBuffer[segmentPos++] = content[i];
+                } else {
+                    if (content[i] == ':') {
+                        inCode = false;
+                        segmentPos = 0;
+
+                        addLibFunction(functionBuffer, codeBuffer);
+                        strcpy(functionBuffer, "");
+                        strcpy(codeBuffer, "");
+                        continue;
+                    }
+                    if (isxdigit((unsigned char)content[i])) {
+                        if (segmentPos < (int)sizeof(codeBuffer) - 1) {
+                            if (segmentPos % 3 == 2 && segmentPos != 0) {
+                                codeBuffer[segmentPos++] = ' ';
+                            }
+                            codeBuffer[segmentPos++] = content[i];
+                            codeBuffer[segmentPos] = ' ';
+                            codeBuffer[segmentPos+1] = '\0';
+                        }
+                    }
+                }
+            }
+            printf("Loaded library '%s'\n", filepath);
+            free(content);
+        }
+    } while (FindNextFileA(hFind, &fd));
+
+    FindClose(hFind);
+}
 
 int parseToken(char *token) {
     if (outputPos/3 > 0x3FF0) {
@@ -555,14 +635,16 @@ int parseToken(char *token) {
             } else if (call[0] == '#') {
                 isFunc = true;
                 int found = -1;
-                for (size_t i = 0; i < sizeof(rxlib) / sizeof(rxlib[0]); i++) {
-                    if (strcmp(call + 1, rxlib[i]) == 0) {
+
+                for (int i = 1; i < libFunctionCount+1; i++) {
+                    if (strcmp(call + 1, libraries[i].function) == 0) {
                         found = i;
                         break;
                     }
                 }
+
                 if (found != -1) {
-                    strcpy(funcCallBuffer, rxlib[found+1]);
+                    strcpy(funcCallBuffer, libraries[found].code);
                 } else {
                     int funcIdx = findFunc(call + 1);
                     if (funcIdx != -1) {
@@ -1161,6 +1243,15 @@ int parseToken(char *token) {
                 return -1;
             }
         } else if (isFunc) {
+            if (argCount > 0) {
+                char *endptr;
+                int value = strtol(stoken, &endptr, 10);
+                if (*endptr != '\0') {
+                    throw(2, stoken);
+                    return -1;
+                }
+                outputPos += sprintf(output + outputPos, "A9 %02X ", value);
+            }
         } else {
             throw(1, stoken);
             return -1;
@@ -1376,9 +1467,11 @@ int compile(char *code) {
 }
 
 int main() {
-    printf("RailExperience Binary Creation Tool\n");
-    printf("Rail V1.1\n");
-    printf("Copyright (C) Innovation Incorporated 2025. All rights reserved.\n");
+    printf("RailExperience Binary Creation Tool for Windows\n");
+    printf("Rail V1.2\n");
+    printf("Copyright (C) Innovation Incorporated 2025. All rights reserved.\n\n");
+    
+    loadLibraries();
     while (true) {
         newCall = true;
         call[32];

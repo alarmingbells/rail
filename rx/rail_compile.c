@@ -429,7 +429,7 @@ int parseToken(char *token) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
             "29 01 "    //AND #01
-            "49 01"     //EOR #01
+            "49 01 "     //EOR #01
             "85 00 02 " //STA $0200
         );
     }
@@ -438,7 +438,7 @@ int parseToken(char *token) {
             "AD 00 80 " //LDA $8000 (controller register)
             "29 01 "    //AND #02
             "4A "       //LSR
-            "49 01"     //EOR #01
+            "49 01 "     //EOR #01
             "85 01 02 " //STA $0201
         );
     }
@@ -448,7 +448,7 @@ int parseToken(char *token) {
             "29 04 "    //AND #04
             "4A "       //LSR
             "4A "       //LSR
-            "49 01"     //EOR #01
+            "49 01 "     //EOR #01
             "85 02 02 " //STA $0202
         );
     }
@@ -459,7 +459,7 @@ int parseToken(char *token) {
             "4A "       //LSR
             "4A "       //LSR
             "4A "       //LSR
-            "49 01"     //EOR #01
+            "49 01 "     //EOR #01
             "85 02 03 " //STA $0203
         );
     }

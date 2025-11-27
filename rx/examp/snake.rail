@@ -8,6 +8,8 @@ function init:
     arr segmentsy 200; 
     var applex 50;
     var appley 50;
+    var appleseedx 0;
+    var appleseedy 0;
     var running 1;
     var i 0;
     while i != 200:
@@ -20,8 +22,8 @@ return 0;
 
 function newApple:
     setPx applex appley x;
-    assign appley (headx + appley;);
-    assign applex (heady + applex;);
+    assign appley (appleseedy;);
+    assign applex (appleseedx;);
     setPx applex appley r;
 return 0;
 
@@ -80,15 +82,9 @@ main:
         if heady > 89:
             #endGame;
         end;
-        if appley > 89:
-            #newApple;
-        end;
-        if applex > 89:
-            #newApple;
-        end;
         assign i 0;
+        var added 0;
         while i != 200:
-            var added 0;
             if added == 0:
                 if segments[i] == 0:
                     assign segments[i] (length;);
@@ -101,6 +97,15 @@ main:
                 subfrom segments[i] 1;
             end;
             addto i 1;
+        end;
+
+        addto appleseedx 1;
+        if appleseedx > 89:
+            assign appleseedx 0;
+            addto appleseedy 1;
+            if appleseedy > 89:
+                assign appleseedy 0;
+            end;
         end;
 
         assign i 0;        

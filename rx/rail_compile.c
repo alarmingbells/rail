@@ -1247,10 +1247,35 @@ int parseToken(char *token) {
                 char *endptr;
                 int value = strtol(stoken, &endptr, 10);
                 if (*endptr != '\0') {
-                    throw(2, stoken);
-                    return -1;
+                    int varIdx = findVariable(stoken);
+                    if (varIdx != -1) {
+                        buffer = vars[varIdx].address;
+                    } else {
+                        throw(1, stoken);
+                        return -1;
+                    }
+                    if (argCount == 1) {
+                        outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+                    } else if (argCount == 2) {
+                        outputPos += sprintf(output + outputPos, "AE %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+                    } else if (argCount == 3) {
+                        outputPos += sprintf(output + outputPos, "AC %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+                    } else {
+                        throw(5, stoken);
+                        return -1;
+                    }
+                } else {
+                    if (argCount == 1) {
+                        outputPos += sprintf(output + outputPos, "A9 %02X ", value);
+                    } else if (argCount == 2) {
+                        outputPos += sprintf(output + outputPos, "A2 %02X ", value);
+                    } else if (argCount == 3) {
+                        outputPos += sprintf(output + outputPos, "A0 %02X ", value);
+                    } else {
+                        throw(5, stoken);
+                        return -1;
+                    }
                 }
-                outputPos += sprintf(output + outputPos, "A9 %02X ", value);
             }
         } else {
             throw(1, stoken);

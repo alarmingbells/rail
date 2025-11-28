@@ -1,3 +1,4 @@
 main:
     var test 1;
+    assign test (#reset test;);
 end;

@@ -18,6 +18,10 @@ bool inNest = false;
 bool isFunc = false;
 bool pressDefined = false;
 
+int intValue = 0;
+bool isInt = false;
+bool isDouble = false;
+
 int mainPos = 0;
 
 int currentVarIdx = 0;
@@ -53,6 +57,7 @@ int bytebufferPos = 0;
 typedef struct {
     char name[32];
     int address;
+    bool isDouble;
 } Variable;
 
 typedef struct {
@@ -142,7 +147,6 @@ int throw(int type, char *token) {
         case 16:
             printf("\n\033[31mRail compile failure: Too many library entries! (>256)\n(error code 16)\033[0m\n", line, col);
             break;
-        
     }
     return 0;
 }
@@ -163,11 +167,17 @@ int warn(int type, const char *token) {
         case 3:
             printf("\033[33mWarning: User-written bytecode is not checked by compiler, review output to ensure functionality.\n(warning code 3)\033[0m\n");
             break;
+        case 4:
+            printf("\n\033[33mWarning: Value '%s' exceeds 8-bit non-double integer limit (255) and will be truncated to %d. at line %d, column %d.\n(warning code 4)\033[0m\n", token, (strtol(token, NULL, 10) & 0xFF), line, col);
+            break;
+        case 5:
+            printf("\n\033[33mWarning: Value '%s' exceeds 16-bit double integer limit (65,535) and will be truncated to %d. at line %d, column %d.\n(warning code 5)\033[0m\n", token, (strtol(token, NULL, 10) & 0xFFFF), line, col);
+            break;
     }
     return 0;
 }
 
-int addVariable(const char *name) {
+int addVariable(const char *name, bool isDouble) {
     if (nextHeapAddr >= 0x3FFF) {
         warn(1, name);
         return -1;
@@ -176,6 +186,11 @@ int addVariable(const char *name) {
     strncpy(vars[varCount].name, name, sizeof(vars[varCount].name) - 1);
     vars[varCount].name[sizeof(vars[varCount].name) - 1] = '\0';
     vars[varCount].address = nextHeapAddr++;
+
+    if (isDouble) {
+        vars[varCount].isDouble = true;
+        nextHeapAddr++;
+    }
 
     return varCount++;
 }
@@ -666,6 +681,9 @@ int parseToken(char *token) {
             } else if (strcmp(call, "forever") == 0) {
                 loopBranch(outputPos/3, -1, 0, 0, false);
             } else if (strcmp(call, "var") == 0) {
+            } else if (strcmp(call, "double") == 0) {
+                isDouble = true;
+                newCall = true;
             } else if (strcmp(call, "arr") == 0) {
             } else if (strcmp(call, "assign") == 0) {
             } else if (strcmp(call, "addto") == 0) {
@@ -724,6 +742,22 @@ int parseToken(char *token) {
 
         if (strcmp(stoken, "") == 0) return 0;
 
+        char *endptr;
+        int value = strtol(stoken, &endptr, 10);
+        if (*endptr == '\0') {
+            isInt = true;
+            intValue = value;
+            if (!isDouble) {
+                if (value > 0xFF) {
+                    warn(4, stoken);
+                }
+            } else {
+                if (value > 0xFFFF) {
+                    warn(5, stoken);
+                }
+            }
+        }
+
         if (strcmp(call, "function") == 0) {
             if (argCount == 1) {
                 addFunc(stoken);
@@ -734,9 +768,7 @@ int parseToken(char *token) {
         } else if (strcmp(call, "return") == 0) {
             if (argCount == 1) {
                 if (strcmp(stoken, "press") != 0) {
-                    char *endptr;
-                    int value = strtol(stoken, &endptr, 10);
-                    if (*endptr != '\0') {
+                    if (!isInt) {
                         int varIdx = findVariable(stoken);
                         if (varIdx == -1) {
                             throw(1, stoken);
@@ -774,9 +806,8 @@ int parseToken(char *token) {
                 }
             } else if (argCount == 2) {
                 if (strcmp(stoken, "nest") != 0) {
-                    char *endptr;
-                    buffer = strtol(stoken, &endptr, 10);
-                    if (*endptr != '\0') {
+                    buffer = intValue;
+                    if (!isInt) {
                         throw(2, stoken);
                         return -1;
                     }
@@ -801,22 +832,24 @@ int parseToken(char *token) {
         } else if (strcmp(call, "var") == 0) {
             if (argCount == 1) {
                 if (findVariable(stoken) == -1) {
-                    currentVarIdx = addVariable(stoken);
+                    currentVarIdx = addVariable(stoken, isDouble);
                 } else {
                     throw(11, stoken);
                     return -1;
                 }
             } else if (argCount == 2) {
                 if (strcmp(stoken, "nest") != 0) {
-                    char *endptr;
-                    int value = strtol(stoken, &endptr, 10);
-                    if (*endptr != '\0') {
+                    if (!isInt) {
                         throw(2, stoken);
                         return -1;
                     }
-                    outputPos += sprintf(output + outputPos, "A9 %02X ", value);
+                    outputPos += sprintf(output + outputPos, "A9 %02X ", intValue & 0xFF);
                 }
                 outputPos += sprintf(output + outputPos, "8D %02X %02X ", vars[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
+                if (isDouble) {
+                    outputPos += sprintf(output + outputPos, "A9 %02X ", (intValue >> 8));
+                    outputPos += sprintf(output + outputPos, "8D %02X %02X ", vars[currentVarIdx].address+1 & 0xFF, (vars[currentVarIdx].address+1 >> 8) & 0xFF);
+                }
             } else {
                 throw(5, stoken);
                 return -1;
@@ -832,13 +865,11 @@ int parseToken(char *token) {
                 }
                 
             } else if (argCount == 2) {
-                char *endptr;
-                int value = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                if (!isInt) {
                     throw(2, stoken);
                     return -1;
                 }
-                currentVarIdx = addArray(cbuffer, value);
+                currentVarIdx = addArray(cbuffer, intValue);
                 outputPos += sprintf(output + outputPos, "A9 00 8D %02X %02X ", arrays[currentVarIdx].address & 0xFF, (arrays[currentVarIdx].address >> 8) & 0xFF);
                 
             } else {
@@ -881,10 +912,9 @@ int parseToken(char *token) {
                     return -1;
                 }
             } else if (argCount == 3) {
-                char *endptr;
-                buffer3 = strtol(stoken, &endptr, 10);
+                buffer3 = intValue;
                 strcpy(cbuffer3, "C9");
-                if (*endptr != '\0') {
+                if (!isInt) {
                     int varIdx = findVariable(stoken);
                     if (varIdx != -1) {
                         strcpy(cbuffer3, "CD");
@@ -935,10 +965,9 @@ int parseToken(char *token) {
                     buffer3 = vars[varIdx].address;
                     loopBranch(outputPos/3, buffer, buffer2, buffer3, false);
                 } else {
-                    char *endptr;
-                    buffer3 = strtol(stoken, &endptr, 10);
+                    buffer3 = intValue;
 
-                    if (*endptr != '\0') {
+                    if (!isInt) {
                         throw(1, stoken);
                         return -1;
                     }
@@ -955,32 +984,54 @@ int parseToken(char *token) {
                 int array = findArray(stoken);
                 if (variable != -1 ) {
                     buffer = vars[variable].address;
+                    if (isDouble) {
+                        buffer3 = (vars[variable].isDouble) ? 1 : 0;
+                    }
                 } else if (array != -1) {
                     buffer = arrays[array].address + arrayIndex;
                 } else {
                     throw(1, stoken);
                     return -1;
-                }                
+                }               
             } else if (argCount == 2) {
-                char *endptr;
-                buffer2 = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                buffer2 = intValue;
+                if (!isInt) {
                     throw(2, stoken);
                     return -1;
                 }
-                outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
-                outputPos += sprintf(output + outputPos, "18 69 %02X ", buffer2 & 0xFF);
-                outputPos += sprintf(output + outputPos, "8D %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+                if (buffer3 == 0) {
+                    outputPos += sprintf(output + outputPos, 
+                        "AD %02X %02X " //LDA variable
+                        "18 "           //CLC        
+                        "69 %02X "      //ADC value
+                        "8D %02X %02X ",//STA variable
+                    buffer & 0xFF, (buffer >> 8) & 0xFF, buffer2 & 0xFF, buffer & 0xFF, (buffer >> 8) & 0xFF);
+                } else {
+                    outputPos += sprintf(output + outputPos, 
+                        "AD %02X %02X " //LDA variable_low
+                        "18 "           //CLC
+                        "69 %02X "      //ADC value_low
+                        "8D %02X %02X " //STA variable_low
+                        "AD %02X %02X " //LDA variable_high
+                        "69 %02X "      //ADC value_high
+                        "8D %02X %02X ",//STA variable_high
+                    buffer & 0xFF, (buffer >> 8) & 0xFF, buffer2 & 0xFF, buffer & 0xFF, (buffer >> 8) & 0xFF, 
+                    buffer+1 & 0xFF, (buffer+1 >> 8) & 0xFF, (buffer2 >> 8) & 0xFF, buffer+1 & 0xFF, (buffer+1 >> 8) & 0xFF);
+                }
             } else {
                 throw(5, stoken);
                 return -1;
             }
+
         } else if (strcmp(call, "subfrom") == 0) {
             if (argCount == 1) {
                 int variable = findVariable(stoken);
                 int array = findArray(stoken);
                 if (variable != -1 ) {
                     buffer = vars[variable].address;
+                    if (isDouble) {
+                        buffer3 = (vars[variable].isDouble) ? 1 : 0;
+                    }
                 } else if (array != -1) {
                     buffer = arrays[array].address + arrayIndex;
                 } else {
@@ -988,24 +1039,38 @@ int parseToken(char *token) {
                     return -1;
                 }  
             } else if (argCount == 2) {
-                char *endptr;
-                buffer2 = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                buffer2 = intValue;
+                if (!isInt) {
                     throw(2, stoken);
                     return -1;
                 }
-                outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
-                outputPos += sprintf(output + outputPos, "38 E9 %02X ", buffer2 & 0xFF);
-                outputPos += sprintf(output + outputPos, "8D %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+                if (buffer3 == 0) {
+                    outputPos += sprintf(output + outputPos, 
+                        "AD %02X %02X " //LDA variable
+                        "38 "           //SEC        
+                        "E9 %02X "      //SBC value
+                        "8D %02X %02X ",//STA variable
+                    buffer & 0xFF, (buffer >> 8) & 0xFF, buffer2 & 0xFF, buffer & 0xFF, (buffer >> 8) & 0xFF);
+                } else {
+                    outputPos += sprintf(output + outputPos, 
+                        "AD %02X %02X " //LDA variable_low
+                        "38 "           //CLC
+                        "E9 %02X "      //ADC value_low
+                        "8D %02X %02X " //STA variable_low
+                        "AD %02X %02X " //LDA variable_high
+                        "E9 %02X "      //ADC value_high
+                        "8D %02X %02X ",//STA variable_high
+                    buffer & 0xFF, (buffer >> 8) & 0xFF, buffer2 & 0xFF, buffer & 0xFF, (buffer >> 8) & 0xFF, 
+                    buffer+1 & 0xFF, (buffer+1 >> 8) & 0xFF, (buffer2 >> 8) & 0xFF, buffer+1 & 0xFF, (buffer+1 >> 8) & 0xFF);
+                }
             } else {
                 throw(5, stoken);
                 return -1;
             }
         } else if (strcmp(call, "setPx") == 0) {
             if (argCount == 1) {
-                char *endptr;
-                buffer = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                buffer = intValue;
+                if (!isInt) {
                     int varIdx = findVariable(stoken);
                     int arrIdx = findArray(stoken);
                     if (varIdx != -1) {
@@ -1023,9 +1088,8 @@ int parseToken(char *token) {
                 }
             }
             if (argCount == 2) {
-                char *endptr;
-                buffer2 = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                buffer2 = intValue;
+                if (!isInt) {
                     if (buffer3 != 1) {
                         throw(2, stoken);
                         return -1;
@@ -1113,23 +1177,20 @@ int parseToken(char *token) {
         
         } else if (strcmp(call, "setBg") == 0) {
             if (argCount == 1) {
-                char *endptr;
-                buffer = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                buffer = intValue;
+                if (!isInt) {
                     throw(2, stoken);
                     return -1;
                 }
             } else if (argCount == 2) {
-                char *endptr;
-                buffer2 = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                buffer2 = intValue;
+                if (!isInt) {
                     throw(2, stoken);
                     return -1;
                 }
             } else if (argCount == 3) {
-                char *endptr;
-                buffer3 = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                buffer3 = intValue;
+                if (!isInt) {
                     throw(2, stoken);
                     return -1;
                 }
@@ -1170,9 +1231,8 @@ int parseToken(char *token) {
 
         } else if (strcmp(call, "sleep") == 0) {
             if (argCount == 1) {
-                char *endptr;
-                buffer = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                buffer = intValue;
+                if (!isInt) {
                     throw(2, stoken);
                     return -1;
                 }
@@ -1207,9 +1267,7 @@ int parseToken(char *token) {
                     return -1;
                 }
             } else if (argCount == 2) {
-                char *endptr;
-                int value = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                if (!isInt) {
                     int varIdx = findVariable(stoken);
                     if (varIdx != -1) {
                         buffer3 = 1;
@@ -1244,9 +1302,7 @@ int parseToken(char *token) {
             }
         } else if (isFunc) {
             if (argCount > 0) {
-                char *endptr;
-                int value = strtol(stoken, &endptr, 10);
-                if (*endptr != '\0') {
+                if (!isInt) {
                     int varIdx = findVariable(stoken);
                     if (varIdx != -1) {
                         buffer = vars[varIdx].address;
@@ -1287,16 +1343,17 @@ int parseToken(char *token) {
         if (isFunc) outputPos += sprintf(output + outputPos, "%s", funcCallBuffer);
         newCall = true;
         isFunc = false;
+        isDouble = false;
         argCount = 0;
     }
     return 0;
 }
 
 int compile(char *code) {
-    addVariable("p1Up");
-    addVariable("p1Down");
-    addVariable("p1Left");
-    addVariable("p1Right");
+    addVariable("p1Up", false);
+    addVariable("p1Down", false);
+    addVariable("p1Left", false);
+    addVariable("p1Right", false);
 
     char token[128];
     int tokenIdx = 0;
@@ -1308,6 +1365,7 @@ int compile(char *code) {
     bool nestCallEnded = false;
 
     bool nestIsFunc = false;
+    bool nestIsDouble = false;
 
     int nestBuffer = buffer;
     int nestBuffer2 = buffer2;
@@ -1382,6 +1440,7 @@ int compile(char *code) {
                 inNest = true;
 
                 nestIsFunc = isFunc;
+                nestIsDouble = isDouble;
 
                 nestBuffer = buffer;
                 nestBuffer2 = buffer2;
@@ -1422,6 +1481,7 @@ int compile(char *code) {
                 inNest = false;
                 newCall = true;
 
+                isDouble = nestIsDouble;
                 isFunc = nestIsFunc;
 
                 buffer = nestBuffer;

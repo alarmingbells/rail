@@ -882,10 +882,8 @@ int parseToken(char *token) {
                 int varIdx = findVariable(stoken);
                 int arrIdx = findArray(stoken);
                 if (varIdx != -1) {
-                    strcpy(cbuffer, "AD");
                     buffer = vars[varIdx].address;
                 } else if (arrIdx != -1) {
-                    strcpy(cbuffer, "AD");
                     buffer = (arrays[arrIdx].address + arrayIndex);
                 } else {
                     throw(1, stoken);
@@ -894,22 +892,43 @@ int parseToken(char *token) {
             } else if (argCount == 2) {
                 if (strcmp(stoken, "==") == 0) {
                     buffer2 = 1;
-                    strcpy(cbuffer2, "F0 03 4C ");
+                    strcpy(cbuffer2, "F0 03 ");
                 } else if (strcmp(stoken, "!=") == 0) {
                     buffer2 = 2;
-                    strcpy(cbuffer2, "D0 03 4C ");
+                    strcpy(cbuffer2, "D0 03 ");
                 } else if (strcmp(stoken, ">=") == 0) {
                     buffer2 = 3;
-                    strcpy(cbuffer2, "90 03 4C ");
+                    strcpy(cbuffer2, "B0 03 ");
+                } else if (strcmp(stoken, "<=") == 0) {
+                    buffer2 = 3;
+                    strcpy(cbuffer2, "90 05 F0 03 ");
                 } else if (strcmp(stoken, "<") == 0) {
                     buffer2 = 4;
-                    strcpy(cbuffer2, "B0 03 4C ");
+                    strcpy(cbuffer2, "90 03 ");
                 } else if (strcmp(stoken, ">") == 0) {
-                    buffer2 = 4;
-                    strcpy(cbuffer2, "F0 05 90 03 4C ");
+                    buffer2 = 5;
+                    strcpy(cbuffer2, "F0 02 B0 03 ");
                 } else {
                     throw(6, stoken);
                     return -1;
+                }
+                if (isDouble) {
+                    if (strcmp(stoken, "==") == 0) {
+                        strcpy(cbuffer, "D0 08 ");
+                    } else if (strcmp(stoken, "!=") == 0) {
+                        strcpy(cbuffer, "");
+                    } else if (strcmp(stoken, ">=") == 0) {
+                        strcpy(cbuffer, "90 08 ");
+                    } else if (strcmp(stoken, "<=") == 0) {
+                        strcpy(cbuffer, "F0 02 B0 08 ");
+                    } else if (strcmp(stoken, "<") == 0) {
+                        strcpy(cbuffer, "F0 02 B0 08 ");
+                    } else if (strcmp(stoken, ">") == 0) {
+                        strcpy(cbuffer, "90 0A ");
+                    } else {
+                        throw(6, stoken);
+                        return -1;
+                    }
                 }
             } else if (argCount == 3) {
                 buffer3 = intValue;
@@ -925,13 +944,24 @@ int parseToken(char *token) {
                     }
                 }
 
-                outputPos += sprintf(output + outputPos, "%s %02X %02X ", cbuffer, buffer & 0xFF, (buffer >> 8) & 0xFF);
-                if (strcmp(cbuffer3, "CD") == 0) {
-                    outputPos += sprintf(output + outputPos, "%s %02X %02X ", cbuffer3, buffer3 & 0xFF, (buffer3 >> 8) & 0xFF);
-                } else if (strcmp(cbuffer3, "C9") == 0) {
-                    outputPos += sprintf(output + outputPos, "%s %02X ", cbuffer3, buffer3 & 0xFF);
+                if (!isDouble) {
+                    outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer & 0xFF, (buffer >> 8) & 0xFF);
+                    if (strcmp(cbuffer3, "CD") == 0) {
+                        outputPos += sprintf(output + outputPos, "%s %02X %02X ", cbuffer3, buffer3 & 0xFF, (buffer3 >> 8) & 0xFF);
+                    } else if (strcmp(cbuffer3, "C9") == 0) {
+                        outputPos += sprintf(output + outputPos, "%s %02X ", cbuffer3, buffer3 & 0xFF);
+                    }
+                    outputPos += sprintf(output + outputPos, "%s4C XX XX ", cbuffer2);
+                } else {
+                    outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer+1 & 0xFF, (buffer+1 >> 8) & 0xFF);
+                    if (strcmp(cbuffer3, "CD") == 0) {
+                        outputPos += sprintf(output + outputPos, "CD %02X %02X ", buffer3+1 & 0xFF, (buffer3+1 >> 8) & 0xFF);
+                        outputPos += sprintf(output + outputPos, "%sAD %02X %02X CD %02X %02X %s4C XX XX ", cbuffer, buffer & 0xFF, (buffer >> 8), buffer3 & 0xFF, (buffer3 >> 8) & 0xFF, cbuffer2);
+                    } else if (strcmp(cbuffer3, "C9") == 0) {
+                        outputPos += sprintf(output + outputPos, "CD %02X ", (buffer3 >> 8));
+                        outputPos += sprintf(output + outputPos, "%sAD %02X %02X EA CD %02X %s4C XX XX ", cbuffer, buffer & 0xFF, (buffer >> 8), buffer3 & 0xFF, cbuffer2);
+                    }
                 }
-                outputPos += sprintf(output + outputPos, "%sXX XX ", cbuffer2);
 
                 branch(outputPos/3);
             } else {

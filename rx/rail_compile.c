@@ -953,13 +953,30 @@ int parseToken(char *token) {
                     }
                     outputPos += sprintf(output + outputPos, "%s4C XX XX ", cbuffer2);
                 } else {
-                    outputPos += sprintf(output + outputPos, "AD %02X %02X ", buffer+1 & 0xFF, (buffer+1 >> 8) & 0xFF);
+                    outputPos += sprintf(output + outputPos, 
+                        "AD %02X %02X ", //LDA High byte
+                    buffer+1 & 0xFF, (buffer+1 >> 8) & 0xFF);
                     if (strcmp(cbuffer3, "CD") == 0) {
-                        outputPos += sprintf(output + outputPos, "CD %02X %02X ", buffer3+1 & 0xFF, (buffer3+1 >> 8) & 0xFF);
-                        outputPos += sprintf(output + outputPos, "%sAD %02X %02X CD %02X %02X %s4C XX XX ", cbuffer, buffer & 0xFF, (buffer >> 8), buffer3 & 0xFF, (buffer3 >> 8) & 0xFF, cbuffer2);
+                        outputPos += sprintf(output + outputPos, 
+                            "CD %02X %02X ",//
+                        buffer3+1 & 0xFF, (buffer3+1 >> 8) & 0xFF);
+                        outputPos += sprintf(output + outputPos, 
+                            "%s"            //High byte check
+                            "AD %02X %02X " //LDA low byte 1
+                            "CD %02X %02X " //CMP low byte 2
+                            "%s"            //Low byte check
+                            "4C XX XX ",    //JMP end
+                        cbuffer, buffer & 0xFF, (buffer >> 8), buffer3 & 0xFF, (buffer3 >> 8) & 0xFF, cbuffer2);
                     } else if (strcmp(cbuffer3, "C9") == 0) {
                         outputPos += sprintf(output + outputPos, "CD %02X ", (buffer3 >> 8));
-                        outputPos += sprintf(output + outputPos, "%sAD %02X %02X EA CD %02X %s4C XX XX ", cbuffer, buffer & 0xFF, (buffer >> 8), buffer3 & 0xFF, cbuffer2);
+                        outputPos += sprintf(output + outputPos, 
+                            "%s"            //High byte check
+                            "AD %02X %02X"  //LDA low byte 1
+                            "EA"            //NOP
+                            "CD %02X "      //CMP low byte 2
+                            "%s"            //Low byte check
+                            "4C XX XX ",    //JMP end
+                            cbuffer, buffer & 0xFF, (buffer >> 8), buffer3 & 0xFF, cbuffer2);
                     }
                 }
 

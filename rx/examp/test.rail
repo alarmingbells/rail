@@ -1,6 +1,7 @@
 main:
     double var test 1;
-    double if test < 2:
-        assign test 2;
+    double var tes2 2;
+    if (double test == tes2;);
+        assign test 3;
     end;
 end;

@@ -30,6 +30,8 @@ int argCount = 0;
 
 char funcCallBuffer[32];
 
+int whileJmpAddr = 0;
+
 int interruptAddr = START_ADDR;
 int funcReturnAddr = START_ADDR-3;
 int mainAddr = 0x3;
@@ -272,9 +274,6 @@ typedef struct Branch {
     int depth;
     int type;
     int bytePos;
-    int isImmediate;
-    int isUncond;
-    int loopCond[3];
 } Branch;
 
 #define MAX_BRANCHES 128
@@ -292,76 +291,45 @@ void branch(position) {
     current_branch = branch_count;
     branch_count++;
 }
-void loopBranch(position, conditionVar1, operator, conditionVar2, isImmediate) {
+
+void loopBranch(position) {
     if (branch_count >= MAX_BRANCHES) return;
 
-    bool unc = false;
-    if (conditionVar1 == -1) unc = true; 
-
-    branches[branch_count].isImmediate = isImmediate;
     branches[branch_count].parent = current_branch;
     branches[branch_count].depth = (current_branch == -1) ? 0 : branches[current_branch].depth + 1;
     branches[branch_count].type = 2;
     branches[branch_count].bytePos = position;
-
-    if (!unc) {
-        branches[branch_count].loopCond[0] = conditionVar1;
-        branches[branch_count].loopCond[1] = operator;
-        branches[branch_count].loopCond[2] = conditionVar2;
-    } else {
-        branches[branch_count].loopCond[0] = 0;
-        branches[branch_count].loopCond[1] = 4;
-        branches[branch_count].loopCond[2] = 0;
-    }
-    branches[branch_count].isUncond = unc;
-
     current_branch = branch_count;
     branch_count++;
 }
 
 void unbranch(isElse) {
     if (current_branch != -1) {
-        if (branches[current_branch].type == 1) {
-            int xxPos = (branches[current_branch].bytePos-2)*3;
-            int distance = (outputPos/3) - branches[current_branch].bytePos;
+        printf("%d\n", branches[current_branch].type);
+        int xxPos = (branches[current_branch].bytePos-2)*3;
+        int distance = (outputPos/3) - branches[current_branch].bytePos;
 
-            char jhCode[2];
-            char jhCode2[2];
-            int outputByte = START_ADDR + outputPos/3;
+        char jhCode[2];
+        char jhCode2[2];
+        int outputByte = START_ADDR + outputPos/3;
 
-            sprintf(jhCode, "%02X", outputByte & 0xFF);
-            sprintf(jhCode2, "%02X", (outputByte >> 8) & 0xFF);
+        if (branches[current_branch].type == 2) {
+            int addr = whileJmpAddr + START_ADDR;
+            outputPos += sprintf(output + outputPos, "4C %02X %02X ", addr & 0xFF, (addr >> 8));
+        }
 
-            output[xxPos] = jhCode[0];
-            output[xxPos + 1] = jhCode[1];
+        sprintf(jhCode, "%02X", outputByte & 0xFF);
+        sprintf(jhCode2, "%02X", (outputByte >> 8) & 0xFF);
 
-            output[xxPos + 3] = jhCode2[0];
-            output[xxPos + 4] = jhCode2[1];
+        output[xxPos] = jhCode[0];
+        output[xxPos + 1] = jhCode[1];
 
-            if (isElse) {
-                outputPos += sprintf(output + outputPos, "4C XX XX ");
-                branch(outputPos/3);
-            }
-        } else if (branches[current_branch].type == 2) {
-            if (branches[current_branch].loopCond[1] != 4) {
-                int var1Addr = branches[current_branch].loopCond[0];
-                int var2Addr = branches[current_branch].loopCond[2];
-                outputPos += sprintf(output + outputPos, "AD %02X %02X ", var1Addr & 0xFF, (var1Addr >> 8) & 0xFF);
-                
-                if (!branches[current_branch].isImmediate) outputPos += sprintf(output + outputPos, "CD %02X %02X ", var2Addr & 0xFF, (var2Addr >> 8) & 0xFF);
-                else outputPos += sprintf(output + outputPos, "C9 %02X ", var2Addr);
-            }
+        output[xxPos + 3] = jhCode2[0];
+        output[xxPos + 4] = jhCode2[1];
 
-            int addr = START_ADDR + branches[current_branch].bytePos;
-            if (branches[current_branch].loopCond[1] == 1) {
-                outputPos += sprintf(output + outputPos, "D0 03 4C %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
-            } else if (branches[current_branch].loopCond[1] == 2) {
-                outputPos += sprintf(output + outputPos, "F0 03 4C %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
-            } else if (branches[current_branch].loopCond[1] == 3) {
-                outputPos += sprintf(output + outputPos, "B0 03 4C %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
-            } else if (branches[current_branch].loopCond[1] == 4) {
-                outputPos += sprintf(output + outputPos, "4C %02X %02X ", addr & 0xFF, (addr >> 8) & 0xFF);
-            }
+        if (isElse) {
+            outputPos += sprintf(output + outputPos, "4C XX XX ");
+            branch(outputPos/3);
         }
         current_branch = branches[current_branch].parent;
     } else {
@@ -522,11 +490,29 @@ int parseToken(char *token) {
     strncpy(stoken, token, len);
     stoken[len] = '\0';
 
+    char *endptr;
+    int value = strtol(stoken, &endptr, 10);
+    if (*endptr == '\0') {
+        isInt = true;
+        intValue = value;
+        if (!isDouble) {
+            if (value > 0xFF) {
+                warn(4, stoken);
+            }
+        } else {
+            if (value > 0xFFFF) {
+                warn(5, stoken);
+            }
+        }
+    } else {
+        isInt = false;
+    }
+
     if (strcmp(stoken, "p1Up") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
             "29 01 "    //AND #01
-            "49 01 "     //EOR #01
+            "49 01 "    //EOR #01
             "85 00 02 " //STA $0200
         );
     }
@@ -535,7 +521,7 @@ int parseToken(char *token) {
             "AD 00 80 " //LDA $8000 (controller register)
             "29 01 "    //AND #02
             "4A "       //LSR
-            "49 01 "     //EOR #01
+            "49 01 "    //EOR #01
             "85 01 02 " //STA $0201
         );
     }
@@ -545,7 +531,7 @@ int parseToken(char *token) {
             "29 04 "    //AND #04
             "4A "       //LSR
             "4A "       //LSR
-            "49 01 "     //EOR #01
+            "49 01 "    //EOR #01
             "85 02 02 " //STA $0202
         );
     }
@@ -556,7 +542,7 @@ int parseToken(char *token) {
             "4A "       //LSR
             "4A "       //LSR
             "4A "       //LSR
-            "49 01 "     //EOR #01
+            "49 01 "    //EOR #01
             "85 02 03 " //STA $0203
         );
     }
@@ -680,6 +666,7 @@ int parseToken(char *token) {
                 unbranch(true);
             } else if (strcmp(call, "if") == 0) {
             } else if (strcmp(call, "while") == 0) {
+                whileJmpAddr = outputPos/3;
             } else if (strcmp(call, "forever") == 0) {
                 loopBranch(outputPos/3, -1, 0, 0, false);
             } else if (strcmp(call, "var") == 0) {
@@ -709,7 +696,9 @@ int parseToken(char *token) {
                 } else {
                     outputPos += sprintf(output + outputPos, "9D %02X %02X ", arrays[currentVarIdx].address & 0xFF, (vars[currentVarIdx].address >> 8) & 0xFF);
                 }
-                outputPos += sprintf(output + outputPos, "BD %02X %02X ", VAddress & 0xFF, (VAddress >> 8) & 0xFF);
+                outputPos += sprintf(output + outputPos, "BD %02X %02X ", VAddress & 0xFF, (VAddress >> 8) & 0xFF);                
+            } else if (isInt) {
+                outputPos += sprintf(output + outputPos, "A9 %02X ", intValue);   
             } else {
                 throw(4, call);
                 return -1;
@@ -743,24 +732,6 @@ int parseToken(char *token) {
         stoken[len] = '\0';
 
         if (strcmp(stoken, "") == 0) return 0;
-
-        char *endptr;
-        int value = strtol(stoken, &endptr, 10);
-        if (*endptr == '\0') {
-            isInt = true;
-            intValue = value;
-            if (!isDouble) {
-                if (value > 0xFF) {
-                    warn(4, stoken);
-                }
-            } else {
-                if (value > 0xFFFF) {
-                    warn(5, stoken);
-                }
-            }
-        } else {
-            isInt = false;
-        }
 
         if (strcmp(call, "function") == 0) {
             if (argCount == 1) {
@@ -898,43 +869,21 @@ int parseToken(char *token) {
 
         } else if (strcmp(call, "while") == 0) {
             if (argCount == 1) {
-                int varIdx = findVariable(stoken);
-                if (varIdx != -1) {
-                    buffer = vars[varIdx].address;
-                } else {
-                    throw(1, stoken);
-                    return -1;
-                }
-            } else if (argCount == 2) {
-                if (strcmp(stoken, "==") == 0) {
-                    buffer2 = 1;
-                } else if (strcmp(stoken, "!=") == 0) {
-                    buffer2 = 2;
-                } else if (strcmp(stoken, "<") == 0) {
-                    buffer2 = 3;
-                } else {
-                    throw(6, stoken);
-                    return -1;
-                }
-            } else if (argCount == 3) {
-                int varIdx = findVariable(stoken);
-                if (varIdx != -1) {
-                    buffer3 = vars[varIdx].address;
-                    loopBranch(outputPos/3, buffer, buffer2, buffer3, false);
-                } else {
-                    buffer3 = intValue;
-
-                    if (!isInt) {
-                        throw(1, stoken);
+                if (argCount == 1) {
+                    if (strcmp(stoken, "nest") != 0) {
+                        throw(5, stoken);
                         return -1;
                     }
-                    loopBranch(outputPos/3, buffer, buffer2, buffer3, true);
+
+                    outputPos += sprintf(output + outputPos, "C9 00 D0 03 4C XX XX ");
+
+                    loopBranch(outputPos/3);
+                } else {
+                    throw(5, stoken);
+                    return -1;
                 }
-            } else {
-                throw(5, stoken);
-                return -1;
             }
- 
+
         } else if (strcmp(call, "addto") == 0) {
             if (argCount == 1) {
                 int variable = findVariable(stoken);
@@ -1337,7 +1286,11 @@ int parseToken(char *token) {
                                 "AD %02X %02X " //LDA low byte 1
                                 "CD %02X %02X " //CMP low byte 2
                                 "%s"            //Low byte check
-                                "A9 00 18 90 02 A9 01 ",//Final value set
+                                //Final value set
+                                "A9 00 "        //LDA #0
+                                "18 "           //CLC
+                                "90 02 "        //BCC 02
+                                "A9 01 ",       //LDA #1
                             cbuffer, varAddr & 0xFF, (varAddr >> 8), buffer2 & 0xFF, (buffer2 >> 8) & 0xFF, cbuffer2);
                         } else {
                             outputPos += sprintf(output + outputPos, "CD %02X ", (buffer3 >> 8));
@@ -1347,7 +1300,11 @@ int parseToken(char *token) {
                                 "EA"            //NOP
                                 "CD %02X "      //CMP low byte 2
                                 "%s"            //Low byte check
-                                "A9 00 18 90 02 A9 01 ",//Final value set
+                                //Final value set
+                                "A9 00 "        //LDA #0
+                                "18 "           //CLC
+                                "90 02 "        //BCC 02
+                                "A9 01 ",       //LDA #1
                             cbuffer, buffer & 0xFF, (buffer >> 8), buffer3 & 0xFF, cbuffer2);
                         }
                     }
@@ -1609,7 +1566,7 @@ int compile(char *code) {
 
 int main() {
     printf("RailExperience Binary Creation Tool for Windows\n");
-    printf("Rail V1.2\n");
+    printf("Rail V1.3\n");
     printf("Copyright (C) Innovation Incorporated 2025. All rights reserved.\n\n");
     
     loadLibraries();

@@ -77,7 +77,7 @@ Variable vars[128];
 int varCount = 0;
 int nextHeapAddr = 0x0200;
 
-Variable arrays[8];
+Array arrays[8];
 int arrayCount = 0;
 
 Function funcs[8];
@@ -99,6 +99,8 @@ int throw(int type, char *token) {
     //13- branch unclosed
     //14- invalid pixel
     //15- bad string
+    //16- lib overflow
+    //17- bad index
 
     switch (type) {
         case 1:
@@ -148,6 +150,9 @@ int throw(int type, char *token) {
             break;
         case 16:
             printf("\n\033[31mRail compile failure: Too many library entries! (>256)\n(error code 16)\033[0m\n", line, col);
+            break;
+        case 17:
+            printf("\n\033[31mRail compile failure: Index on non-array '%s' at line %d\n(error code 17)\033[0m\n", token, line, col);
             break;
     }
     return 0;
@@ -208,6 +213,7 @@ int addArray(const char *name, int size) {
     strncpy(arrays[arrayCount].name, name, sizeof(arrays[arrayCount].name) - 1);
     arrays[arrayCount].name[sizeof(arrays[arrayCount].name) - 1] = '\0';
     arrays[arrayCount].address = nextHeapAddr++;
+    arrays[arrayCount].size = size;
 
     nextHeapAddr += size;
 
@@ -305,7 +311,6 @@ void loopBranch(position) {
 
 void unbranch(isElse) {
     if (current_branch != -1) {
-        printf("%d\n", branches[current_branch].type);
         int xxPos = (branches[current_branch].bytePos-2)*3;
         int distance = (outputPos/3) - branches[current_branch].bytePos;
 
@@ -459,6 +464,15 @@ int parseToken(char *token) {
     int idxidx = 0;
     for (int i = 0; i < len; i++) {
         if (token[i] == '[') {
+            strcpy(stoken, "");
+            strncpy(stoken, token, i);
+            stoken[len] = '\0';
+
+            if (findArray(stoken) == -1) {
+                throw(17, stoken);
+                return -1;
+            }
+
             isIndex = true;
             continue;
         }
@@ -556,7 +570,7 @@ int parseToken(char *token) {
             "4A "       //LSR
             "4A "       //LSR
             "4A "       //LSR
-            "85 00 02"  //STA $0204
+            "85 04 02"  //STA $0204
         );
     }
     if (strcmp(stoken, "p2Down") == 0) {
@@ -566,7 +580,7 @@ int parseToken(char *token) {
             "2A "       //ROL
             "2A "       //ROL
             "2A "       //ROL
-            "85 01 02"  //STA $0205
+            "85 05 02"  //STA $0205
         );
     }
     if (strcmp(stoken, "p2Left") == 0) {
@@ -575,7 +589,7 @@ int parseToken(char *token) {
             "29 40 "    //AND #64
             "2A "       //ROL
             "2A "       //ROL
-            "85 02 02"  //STA $0206
+            "85 06 02"  //STA $0206
         );
     }
     if (strcmp(stoken, "p2Right") == 0) {
@@ -583,7 +597,7 @@ int parseToken(char *token) {
             "AD 00 80 " //LDA $8000 (controller register)
             "29 80 "    //AND #128
             "2A "       //ROL
-            "85 02 03"  //STA $0207
+            "85 07 03"  //STA $0207
         );
     }
 
@@ -1162,7 +1176,11 @@ int parseToken(char *token) {
                     return -1;
                 }
             }
-        } else if (findVariable(call) != -1) {
+        } else if (findVariable(call) != -1 || findArray(call) != -1) {
+            bool isArray = false;
+            if (findArray(call) != -1) {
+                isArray = true;
+            }
             if (argCount == 1) {
                 if (strcmp(stoken, "+") == 0) {
                     buffer = 1;
@@ -1187,9 +1205,14 @@ int parseToken(char *token) {
             } else if (argCount == 2) {
                 if (!isInt) {
                     int varIdx = findVariable(stoken);
+                    int arrIdx = findArray(stoken);
                     if (varIdx != -1) {
                         buffer3 = 1;
-                        buffer2 = vars[varIdx].address;
+                        if (!isArray) {
+                            buffer2 = vars[varIdx].address;
+                        } else {
+                            buffer2 = arrays[arrIdx].address;
+                        }
                     } else {
                         throw(1, stoken);
                         return -1;
@@ -1264,8 +1287,12 @@ int parseToken(char *token) {
                     }
 
                     if (!isDouble) {
-                        int varAddr = vars[findVariable(call)].address;
-                        outputPos += sprintf(output + outputPos, "AD %02X %02X ", varAddr & 0xFF, (varAddr >> 8) & 0xFF);
+                        int varAddr;
+                        if (!isArray) {
+                            varAddr = vars[findVariable(call)].address;
+                        } else {
+                            varAddr = vars[findArray(call)].address + arrayIndex;
+                        }
                         if (buffer3 == 1) {
                             outputPos += sprintf(output + outputPos, "CD %02X %02X ", buffer2 & 0xFF, (buffer2 >> 8) & 0xFF);
                         } else {
@@ -1367,6 +1394,11 @@ int compile(char *code) {
     addVariable("p1Down", false);
     addVariable("p1Left", false);
     addVariable("p1Right", false);
+
+    addVariable("p2Up", false);
+    addVariable("p2Down", false);
+    addVariable("p2Left", false);
+    addVariable("p2Right", false);
 
     char token[128];
     int tokenIdx = 0;

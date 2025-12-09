@@ -1,4 +1,4 @@
-function init:
+function init;
     var headx 45;
     var heady 45;
     var direction 0;
@@ -10,9 +10,8 @@ function init:
     var appley 50;
     var appleseedx 0;
     var appleseedy 0;
-    var running 1;
     var i 0;
-    while i != 200:
+    while (i != 200;);
         assign segments[i] 0;
         assign segmentsx[i] 0;
         assign segmentsy[i] 0;
@@ -20,16 +19,16 @@ function init:
     end;
 return 0;
 
-function newApple:
+function newApple;
     setPx applex appley x;
     assign appley (appleseedy;);
     assign applex (appleseedx;);
     setPx applex appley r;
 return 0;
 
-function endGame:
+function endGame;
     assign i 0;
-    while i < 6:
+    while (i < 6;);
         setBg 255 0 0;
         sleep 255;
         setBg 0 0 0;
@@ -40,90 +39,90 @@ function endGame:
     #reset;
 return 0;
 
-main:
+main;
     #init;
     #clear;
     setBg 20 120 20;
-    while running == 1:
-        if p1Right == 1:
+    while (1;);
+        if (p1Right == 1;);
             assign direction 0;
         end; 
-        if p1Left == 1:
+        if (p1Left == 1;);
             assign direction 1;
         end; 
-        if p1Down == 1:
+        if (p1Down == 1;);
             assign direction 2;
         end; 
-        if p1Up == 1:
+        if (p1Up == 1;);
             assign direction 3;
         end; 
 
-        if direction == 0:
+        if (direction == 0;);
             addto headx 1;
         end; 
-        if direction == 1:
+        if (direction == 1;);
             subfrom headx 1;
         end; 
-        if direction == 2:
+        if (direction == 2;);
             subfrom heady 1;
         end; 
-        if direction == 3:
+        if (direction == 3;);
             addto heady 1;
         end; 
-        if applex == headx:
-            if appley == heady:
+        if (applex == headx;);
+            if (appley == heady;);
                 addto length 1;
                 #newApple;
             end;
         end;
-        if headx > 89:
+        if (headx > 89;);
             #endGame;
         end;
-        if heady > 89:
+        if (heady > 89;);
             #endGame;
         end;
         assign i 0;
         var added 0;
-        while i != 200:
-            if added == 0:
-                if segments[i] == 0:
+        while (i != 200;);
+            if (added == 0;);
+                if (segments[i] == 0;);
                     assign segments[i] (length;);
                     assign segmentsx[i] (headx;);
                     assign segmentsy[i] (heady;);
                     assign added 1;
                 end;
             end;
-            if segments[i] != 0:
+            if (segments[i] != 0;);
                 subfrom segments[i] 1;
             end;
             addto i 1;
         end;
 
         addto appleseedx 1;
-        if appleseedx > 89:
+        if (appleseedx > 89;);
             assign appleseedx 0;
             addto appleseedy 1;
-            if appleseedy > 89:
+            if (appleseedy > 89;);
                 assign appleseedy 0;
             end;
         end;
 
         assign i 0;        
-        while i != 200:
-            if segments[i] != 0:
+        while (i != 200;);
+            if (segments[i] != 0;);
                 setPx segmentsx[i] segmentsy[i] g;
-                if segmentsx[i] == applex:
-                    if segmentsy[i] == appley:
+                if (segmentsx[i] == applex;);
+                    if (segmentsy[i] == appley;);
                         #newApple;
                     end;
                 end;
-                if segmentsx[i] == headx:
-                    if segmentsy[i] == heady:
+                if (segmentsx[i] == headx;);
+                    if (segmentsy[i] == heady;);
                         #endGame;
                     end;
                 end;
             end;
-            if segments[i] == 0:
+            if (segments[i] == 0;);
                 setPx segmentsx[i] segmentsy[i] x;
             end;
             addto i 1;

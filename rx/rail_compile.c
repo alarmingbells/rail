@@ -466,7 +466,7 @@ int parseToken(char *token) {
         if (token[i] == '[') {
             strcpy(stoken, "");
             strncpy(stoken, token, i);
-            stoken[len] = '\0';
+            stoken[i] = '\0';
 
             if (findArray(stoken) == -1) {
                 throw(17, stoken);
@@ -1034,7 +1034,7 @@ int parseToken(char *token) {
                 }
             }
             if (argCount == 3) {
-                if (strcmp(stoken, "r") == 0 || strcmp(stoken, "g") == 0 || strcmp(stoken, "g") == 0 || strcmp(stoken, "b") == 0 || strcmp(stoken, "x") == 0) {
+                if (strcmp(stoken, "r") == 0 || strcmp(stoken, "g") == 0 || strcmp(stoken, "b") == 0 || strcmp(stoken, "x") == 0) {
                     strcpy(cbuffer, stoken);
                 } else {
                     throw(7, stoken);

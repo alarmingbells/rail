@@ -11,6 +11,7 @@ Rx
 
 0000 - 00FF - zero page
 	0000 - 0001 - indirect address buffer
+	0002 - math library buffer
 0100 - 01FF - hardware stack
 0200 - 3FFF - variables
 	0200 - 0207 - dpad buffers

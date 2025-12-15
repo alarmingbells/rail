@@ -1,4 +1,5 @@
 main:
+    arr segments 10;
     if (p1Up;);
 
     end;

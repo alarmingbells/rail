@@ -1,6 +1,5 @@
 main:
-    arr segments 10;
-    if (p1Up;);
-
+    double var test 10;
+    if (double test == 10;);
     end;
 end;

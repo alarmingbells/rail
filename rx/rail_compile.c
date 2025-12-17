@@ -1320,11 +1320,11 @@ int parseToken(char *token) {
                                 "A9 01 ",       //LDA #1
                             cbuffer, varAddr & 0xFF, (varAddr >> 8), buffer2 & 0xFF, (buffer2 >> 8) & 0xFF, cbuffer2);
                         } else {
-                            outputPos += sprintf(output + outputPos, "CD %02X ", (buffer3 >> 8));
+                            outputPos += sprintf(output + outputPos, "CD %02X ", (varAddr >> 8));
                             outputPos += sprintf(output + outputPos, 
                                 "%s"            //High byte check
-                                "AD %02X %02X"  //LDA low byte 1
-                                "EA"            //NOP
+                                "AD %02X %02X "  //LDA low byte 1
+                                "EA "           //NOP
                                 "CD %02X "      //CMP low byte 2
                                 "%s"            //Low byte check
                                 //Final value set
@@ -1332,7 +1332,7 @@ int parseToken(char *token) {
                                 "18 "           //CLC
                                 "90 02 "        //BCC 02
                                 "A9 01 ",       //LDA #1
-                            cbuffer, buffer & 0xFF, (buffer >> 8), buffer3 & 0xFF, cbuffer2);
+                            cbuffer, varAddr & 0xFF, (varAddr >> 8), varAddr & 0xFF, cbuffer2);
                         }
                     }
                 }
@@ -1386,6 +1386,65 @@ int parseToken(char *token) {
         isDouble = false;
         argCount = 0;
     }
+    return 0;
+}
+
+int optimize() {
+    /*
+    int AValue = -1;
+    bool AisVar = false;
+    int AAddr = -1;
+    bool isLoading = false;
+    int loadBytesLeft = 0;
+
+    int newAValue;
+
+    char byte[2];
+    int bytePos = 0;
+
+    for (size_t c = 0; c < sizeof(output); c++) {
+        if (isxdigit(output[c])) {
+            byte[bytePos] = output[c];
+            bytePos++;
+            if (bytePos > 1) {
+                bytePos = 0;
+                printf("%s ", byte);
+                if (strcmp(byte, "A9") == 0) {
+                    isLoading = true;
+                    loadBytesLeft = 1;
+                } else if (strcmp(byte, "AD") == 0) {
+                    AisVar = true;
+                    isLoading = true;
+                    loadBytesLeft = 2;
+                } else if (isLoading) {
+                    if (loadBytesLeft > 0) {
+                        if (!AisVar) {
+                            newAValue = (int)strtol(byte, NULL, 16);
+                            if (AValue == newAValue) {
+                                printf("<== REDUNDANT LOAD ");
+                            } else {
+                                AValue = newAValue;
+                            }
+                            loadBytesLeft--;
+                        } else {
+                            loadBytesLeft--;
+                            newAValue += (int)strtol(byte, NULL, 16);
+                            if (loadBytesLeft < 1) {
+                                if (AValue == newAValue) {
+                                    printf("<== REDUNDANT LOAD ");
+                                } else {
+                                    AValue = newAValue;
+                                }
+                            }
+                        }
+                    } else {
+                        isLoading = false;
+                    }
+                }
+            }
+        }
+    }
+        */
     return 0;
 }
 
@@ -1654,6 +1713,7 @@ int main() {
                 printf("\nStarting build of file '%s'...\n", filename);
 
                 int sucess = compile(content);
+                optimize();
                 
                 if (sucess == 0) {
                     

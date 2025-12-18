@@ -1,5 +1,7 @@
 main:
-    double var test 10;
-    if (double test == 10;);
+    var test 11;
+    var test2 11;
+    if (test == test2;);
+        assign test 10;
     end;
 end;

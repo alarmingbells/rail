@@ -1390,53 +1390,84 @@ int parseToken(char *token) {
 }
 
 int optimize() {
-    /*
     int AValue = -1;
-    bool AisVar = false;
-    int AAddr = -1;
     bool isLoading = false;
     int loadBytesLeft = 0;
+
+    int bytesRemoved = 0;
+
+    bool isJumping = false;
+    int oldAddr = -1;
+    int jumpBytesLeft = 0;
 
     int newAValue;
 
     char byte[2];
     int bytePos = 0;
 
-    for (size_t c = 0; c < sizeof(output); c++) {
+    int outputSize = sizeof(output);
+
+    for (size_t c = 0; c < outputSize; c++) {
         if (isxdigit(output[c])) {
             byte[bytePos] = output[c];
             bytePos++;
             if (bytePos > 1) {
                 bytePos = 0;
-                printf("%s ", byte);
+
+                static const char *opcodes[] = {
+                    "69","65","75","6D","7D","79","61","71",
+                    "E9","E5","F5","ED","FD","F9","E1","F1",
+                    "A5","B5","BD","B9","A1","B1","AD",
+                    "29","25","35","2D","3D","39","21","31",
+                    "09","05","15","0D","1D","19","01","11",
+                    "49","45","55","4D","5D","59","41","51"
+                };
+                bool found = false;
+                for (size_t i = 0; i < sizeof(opcodes)/sizeof(opcodes[0]); i++) {
+                    if (strcmp(byte, opcodes[i]) == 0) {
+                        found = true;
+                        break;
+                    }
+                }
+
                 if (strcmp(byte, "A9") == 0) {
                     isLoading = true;
                     loadBytesLeft = 1;
-                } else if (strcmp(byte, "AD") == 0) {
-                    AisVar = true;
-                    isLoading = true;
-                    loadBytesLeft = 2;
+                } else if (strcmp(byte, "4C") == 0) {
+                    isJumping = true;
+                    jumpBytesLeft = 2;
+                } else if (found) {
+                    AValue = -1;            
+                } else if (isJumping) {
+                    jumpBytesLeft--;
+                    if (jumpBytesLeft == 1) {
+                        oldAddr = (int)strtol(byte, NULL, 16);
+                    } else {
+                        oldAddr += ((int)strtol(byte, NULL, 16) << 8);
+                        int newAddr = oldAddr - bytesRemoved;
+                        char newAddrStr[4];
+                        sprintf(newAddrStr, "%02X%02X", newAddr & 0xFF, (newAddr >> 8) & 0xFF);
+                        output[c-4] = newAddrStr[0];
+                        output[c-3] = newAddrStr[1];
+                        output[c-2] = ' ';
+                        output[c-1] = newAddrStr[2];
+                        output[c]   = newAddrStr[3];
+                        isJumping = false;
+                    }
                 } else if (isLoading) {
                     if (loadBytesLeft > 0) {
-                        if (!AisVar) {
-                            newAValue = (int)strtol(byte, NULL, 16);
-                            if (AValue == newAValue) {
-                                printf("<== REDUNDANT LOAD ");
-                            } else {
-                                AValue = newAValue;
+                        newAValue = (int)strtol(byte, NULL, 16);
+                        if (AValue == newAValue) {
+                            if (c >= 5) {
+                                memmove(output + c - 5, output + c + 1, strlen(output + c + 1) + 1);
+                                c -= 5;
+                                bytesRemoved += 2;
+                                outputSize -= 5;
                             }
-                            loadBytesLeft--;
                         } else {
-                            loadBytesLeft--;
-                            newAValue += (int)strtol(byte, NULL, 16);
-                            if (loadBytesLeft < 1) {
-                                if (AValue == newAValue) {
-                                    printf("<== REDUNDANT LOAD ");
-                                } else {
-                                    AValue = newAValue;
-                                }
-                            }
+                            AValue = newAValue;
                         }
+                        loadBytesLeft--;
                     } else {
                         isLoading = false;
                     }
@@ -1444,7 +1475,11 @@ int optimize() {
             }
         }
     }
-        */
+    output[outputSize] = '\0';
+    outputPos -= bytesRemoved*3;
+
+    printf("Optimization finished (%dB >> %dB)", (outputPos+(bytesRemoved*3))/3, outputPos/3);
+
     return 0;
 }
 

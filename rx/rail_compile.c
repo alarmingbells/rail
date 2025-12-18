@@ -7,6 +7,9 @@
 
 #define START_ADDR 0xC003
 
+bool printout = false;
+bool printopt = false;
+
 bool newCall = true;
 char call[32];
 int line = 1;
@@ -1412,6 +1415,7 @@ int optimize() {
             byte[bytePos] = output[c];
             bytePos++;
             if (bytePos > 1) {
+                if (printopt) printf("%s ", byte);
                 bytePos = 0;
 
                 static const char *opcodes[] = {
@@ -1458,6 +1462,7 @@ int optimize() {
                     if (loadBytesLeft > 0) {
                         newAValue = (int)strtol(byte, NULL, 16);
                         if (AValue == newAValue) {
+                            if (printopt) printf("\033[31m<- REDUNDANT LOAD \033[0m");
                             if (c >= 5) {
                                 memmove(output + c - 5, output + c + 1, strlen(output + c + 1) + 1);
                                 c -= 5;
@@ -1478,7 +1483,7 @@ int optimize() {
     output[outputSize] = '\0';
     outputPos -= bytesRemoved*3;
 
-    printf("Optimization finished (%dB >> %dB)", (outputPos+(bytesRemoved*3))/3, outputPos/3);
+    printf("Optimization finished (%dB >> %dB)\n", (outputPos+(bytesRemoved*3))/3, outputPos/3);
 
     return 0;
 }
@@ -1729,6 +1734,24 @@ int main() {
         if (len > 0 && filename[len - 1] == '\n') {
             filename[len - 1] = '\0';
         }
+        if (filename[0] == '!') {
+            if (strcmp(filename, "!printout true") == 0) {
+                printout = true;
+                printf("\nPrint output enabled.\n");
+            } else if (strcmp(filename, "!printout false") == 0) {
+                printout = false;
+                printf("\nPrint output disabled.\n");
+            } else if (strcmp(filename, "!printopt true") == 0) {
+                printopt = true;
+                printf("\nPrint optimization enabled.\n");
+            } else if (strcmp(filename, "!printopt false") == 0) {
+                printopt = false;
+                printf("\nPrint optimization disabled.\n");
+            } else {
+                printf("\n\033[31m'%s' is not a valid command.\033[0m\n", filename);
+            }
+            continue;
+        }
         if (strcmp(&filename[len - 5], "rail") != 0) {
             printf("\n\033[31mFile open failure: '%s' is not a valid .rail file\033[0m\n", filename);
             continue;
@@ -1762,8 +1785,12 @@ int main() {
                     }
                     strcat(compFileName, ".bin");
 
-                    printf("\n%s\n\n", output);
-                    printf("Final output size: %d bytes (%.1f%% of limit)\n", outputPos/3, (((float)outputPos/3)/16375)*100);
+                    if (printout) printf("\n%s\n\n", output);
+                    if ((outputPos/3) > 1024) {
+                        printf("Final output size: %.2f KB (%.1f%% of limit)\n", (float)(outputPos/3)/1024.0, (((float)outputPos/3)/16375)*100);
+                    } else {
+                        printf("Final output size: %d bytes (%.1f%% of limit)\n", outputPos/3, (((float)outputPos/3)/16375)*100);
+                    }
 
                     int outputSize = 0x4000;
                     FILE *binary = fopen(compFileName, "wb");

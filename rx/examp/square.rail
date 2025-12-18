@@ -1,0 +1,39 @@
+function init;
+    var color 0;
+    var playerX 45;
+    var playerY 45;
+return 0;
+
+function switch;
+    addto color 1;
+    if (color > 2;);
+        assign color 0;
+    end;
+return press;
+
+main:
+    bindPress switch;
+    while (true;);
+        if (p1Up;);
+            addto playerY 1;
+        end;
+        if (p1Down;);
+            subfrom playerY 1;
+        end;
+        if (p1Right;);
+            addto playerX 1;
+        end;
+        if (p1Left;);
+            subfrom playerX 1;
+        end;
+        if (color == 0;);
+            setPx playerX playerY r;
+        end;
+        if (color == 1;);
+            setPx playerX playerY g;
+        end;
+        if (color == 2;);
+            setPx playerX playerY b;
+        end;
+    end;
+end;

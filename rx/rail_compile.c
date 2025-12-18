@@ -716,6 +716,10 @@ int parseToken(char *token) {
                 outputPos += sprintf(output + outputPos, "BD %02X %02X ", VAddress & 0xFF, (VAddress >> 8) & 0xFF);                
             } else if (isInt) {
                 outputPos += sprintf(output + outputPos, "A9 %02X ", intValue);   
+            } else if (strcmp(call, "true") == 0) {
+                outputPos += sprintf(output + outputPos, "A9 01 ");   
+            } else if (strcmp(call, "false") == 0) {
+                outputPos += sprintf(output + outputPos, "A9 00 ");   
             } else {
                 throw(4, call);
                 return -1;
@@ -1408,7 +1412,7 @@ int optimize() {
     char byte[2];
     int bytePos = 0;
 
-    int outputSize = sizeof(output);
+    int outputSize = strlen(output);
 
     for (size_t c = 0; c < outputSize; c++) {
         if (isxdigit(output[c])) {
@@ -1735,16 +1739,16 @@ int main() {
             filename[len - 1] = '\0';
         }
         if (filename[0] == '!') {
-            if (strcmp(filename, "!printout true") == 0) {
+            if (strcmp(filename, "!printout on") == 0) {
                 printout = true;
                 printf("\nPrint output enabled.\n");
-            } else if (strcmp(filename, "!printout false") == 0) {
+            } else if (strcmp(filename, "!printout off") == 0) {
                 printout = false;
                 printf("\nPrint output disabled.\n");
-            } else if (strcmp(filename, "!printopt true") == 0) {
+            } else if (strcmp(filename, "!printopt on") == 0) {
                 printopt = true;
                 printf("\nPrint optimization enabled.\n");
-            } else if (strcmp(filename, "!printopt false") == 0) {
+            } else if (strcmp(filename, "!printopt off") == 0) {
                 printopt = false;
                 printf("\nPrint optimization disabled.\n");
             } else {

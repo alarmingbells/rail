@@ -684,8 +684,6 @@ int parseToken(char *token) {
             } else if (strcmp(call, "if") == 0) {
             } else if (strcmp(call, "while") == 0) {
                 whileJmpAddr = outputPos/3;
-            } else if (strcmp(call, "forever") == 0) {
-                loopBranch(outputPos/3, -1, 0, 0, false);
             } else if (strcmp(call, "var") == 0) {
             } else if (strcmp(call, "double") == 0) {
                 isDouble = true;

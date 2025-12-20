@@ -1,7 +1,4 @@
-function name;
-
-return press;
-
-main:
-    bindPress name;
+function init;
+    var test 10;
+    addto test 1;
 end;

@@ -1161,14 +1161,35 @@ int parseToken(char *token) {
                     throw(2, stoken);
                     return -1;
                 }
-                outputPos += sprintf(output + outputPos,
-                    "A0 %02X "      //LDY time
-                    "A2 C8 "        //LDX #200
-                    "CA "           //DEX
-                    "D0 FD "        //BNE FD
-                    "88 "           //DEY
-                    "D0 FA "        //BNE FA
+                if (!isDouble) {
+                    outputPos += sprintf(output + outputPos,
+                        "A0 %02X "      //LDY time
+                        "A2 C8 "        //LDX #200
+                        "CA "           //DEX
+                        "D0 FD "        //BNE FD
+                        "88 "           //DEY
+                        "D0 FA "        //BNE FA
                     , buffer);
+                } else {
+                    outputPos += sprintf(output + outputPos,
+                        "A9 %02X "      //LDA time high
+                        "85 03 "        //STA $03
+                        "A0 FF "        //LDY #255
+                        "A2 C8 "        //LDX #200
+                        "CA "           //DEX
+                        "D0 FD "        //BNE FD
+                        "88 "           //DEY
+                        "D0 FA "        //BNE FA
+                        "C6 03 "        //DEC $03
+                        "D0 F6 "        //BNE F6
+                        "A0 %02X "      //LDY time low
+                        "A2 C8 "        //LDX #200
+                        "CA "           //DEX
+                        "D0 FD "        //BNE FD
+                        "88 "           //DEY
+                        "D0 FA "        //BNE FA
+                    , (buffer >> 8) & 0xFF,  buffer & 0xFF);
+                }
             }
         } else if (strcmp(call, "bindPress") == 0) {
             if (argCount == 1) {
@@ -1773,10 +1794,9 @@ int main() {
                 printf("\nStarting build of file '%s'...\n", filename);
 
                 int sucess = compile(content);
-                optimize();
                 
                 if (sucess == 0) {
-                    
+                    optimize();                    
                     char compFileName[32];
                     for (int i = 0; i < strlen(filename); i++) {
                         if (filename[i] == '.') {

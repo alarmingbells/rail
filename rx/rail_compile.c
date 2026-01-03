@@ -1050,13 +1050,13 @@ int parseToken(char *token) {
                 isVariable = buffer3;
 
                 if (strcmp(stoken, "r") == 0) {
-                    buffer3 = 0x01;
+                    buffer3 = 0b01;
                 } else if (strcmp(stoken, "g") == 0) {
-                    buffer3 = 0x10;
+                    buffer3 = 0b10;
                 } else if (strcmp(stoken, "b") == 0) {
-                    buffer3 = 0x11;
+                    buffer3 = 0b11;
                 } else if (strcmp(stoken, "x") == 0) {
-                    buffer3 = 0x00;
+                    buffer3 = 0b00;
                 }
                 
                 
@@ -1424,6 +1424,7 @@ int optimize() {
 
     bool isJumping = false;
     int oldAddr = -1;
+    int oldAddrBuffer = -1;
     int jumpBytesLeft = 0;
 
     int newAValue;
@@ -1457,7 +1458,7 @@ int optimize() {
                     }
                 }
 
-                if (strcmp(byte, "A9") == 0) {
+                if (strcmp(byte, "A9") == 0 && !isJumping) {
                     isLoading = true;
                     loadBytesLeft = 1;
                 } else if (strcmp(byte, "4C") == 0) {
@@ -1466,11 +1467,10 @@ int optimize() {
                 } else if (found) {
                     AValue = -1;            
                 } else if (isJumping) {
-                    jumpBytesLeft--;
-                    if (jumpBytesLeft == 1) {
-                        oldAddr = (int)strtol(byte, NULL, 16);
-                    } else {
-                        oldAddr += ((int)strtol(byte, NULL, 16) << 8);
+                    if (jumpBytesLeft == 2) {
+                        oldAddrBuffer = (int)strtol(byte, NULL, 16);
+                    } else if (jumpBytesLeft == 1) {
+                        oldAddr = ((int)strtol(byte, NULL, 16) << 8) + oldAddrBuffer;
                         int newAddr = oldAddr - bytesRemoved;
                         char newAddrStr[4];
                         sprintf(newAddrStr, "%02X%02X", newAddr & 0xFF, (newAddr >> 8) & 0xFF);
@@ -1481,6 +1481,7 @@ int optimize() {
                         output[c]   = newAddrStr[3];
                         isJumping = false;
                     }
+                    jumpBytesLeft--;
                 } else if (isLoading) {
                     if (loadBytesLeft > 0) {
                         newAValue = (int)strtol(byte, NULL, 16);

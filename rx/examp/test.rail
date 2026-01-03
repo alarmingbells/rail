@@ -1,4 +1,5 @@
-function init;
-    var test 10;
-    addto test 1;
+main:
+    if (true;);
+        setPx 45 45 g;
+    end;
 end;

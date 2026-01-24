@@ -1,15 +1,12 @@
 clear:
+A9 00
 A2 00
 A0 40
-99 00 40
-E8
-DO FA
-C8
-DO F7
+81 00 E8
+D0 FB 88
+D0 F8
 :reset:
 A2 00
 9A
 78
 4C 00 C0:
-
-

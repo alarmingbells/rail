@@ -6,12 +6,42 @@ module frame_buffer (input clk,
                     input IE,
                     output reg [1:0] dataOut,
                     output reg [23:0] bgcolour);
-    reg [1:0] buffer [1 << 13:0];
+    reg [1:0] buffer [0:8191];
+    reg writing;
+    reg [2:0] delayClocks;
+    reg IEp0;
+    reg IEp1;
+    reg [12:0] addressLatch;
+    reg [1:0] datap0;
+    reg [1:0] datap1;
 
+    wire ieFall = IEp1 & ~IEp0;
+    wire ieRise = ~IEp1 & IEp0;
 
     always @(posedge clk) begin
-        if (!IE) 
-            buffer[address] <= colour;
+        IEp0 <= IE;
+        IEp1 <= IEp0;
+
+        if (delayClocks > 3'h0) begin
+            delayClocks <= delayClocks - 3'h1;
+        end
+
+        if (ieFall) begin
+            if (delayClocks == 3'h0 && !writing) begin
+                writing <= 1'b1;
+                addressLatch <= address;
+            end
+        end
+        if (ieRise) begin
+            delayClocks <= 3'h6;
+            writing <= 1'b0;
+            buffer[addressLatch] <= datap1;
+        end
+        
+        if (writing) begin
+            datap0 <= colour;
+            datap1 <= datap0;
+        end
 
         bgcolour[7:0] <= {buffer[13'h1FFF], buffer[13'h1FFE], buffer[13'h1FFD], buffer[13'h1FFC]};
         bgcolour[15:8] <= {buffer[13'h1FFB], buffer[13'h1FFA], buffer[13'h1FF9], buffer[13'h1FF8]};
@@ -19,7 +49,6 @@ module frame_buffer (input clk,
 
         dataOut <= buffer[addr_internal];
     end
-    
 endmodule
 
 module palette_sw (output reg [1:0] palette,

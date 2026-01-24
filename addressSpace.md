@@ -16,7 +16,7 @@ Rx
 0100 - 01FF - hardware stack
 0200 - 3FFF - variables
 	0200 - 0207 - dpad buffers
-4000 - 7FFF - RailView frame buffer
+4000 - 7FFF - RailView frame buffer x2
 7FFF - BFFF - controller register repeated
 C000 - FFFF - cartridge
 

@@ -28,7 +28,7 @@
     "InstLine" : 127,
     "InstName" : "sw1",
     "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/sipeed TangNano-20K-example main hdmi/src/source.v",
-    "ModuleLine" : 25,
+    "ModuleLine" : 54,
     "ModuleName" : "palette_sw"
    },
    {

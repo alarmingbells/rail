@@ -528,39 +528,53 @@ int parseToken(char *token) {
     if (strcmp(stoken, "p1Up") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 01 "    //AND #01
-            "49 01 "    //EOR #01
-            "85 00 02 " //STA $0200
+            "29 E0 "    //AND 11100000
+            "C9 60 "    //CMP 01100000
+            "D0 05 "    //BNE 05
+            "A9 01 "    //LDA #1
+            "18 "       //CLC
+            "90 02 "    //BCC 02
+            "A9 00 "    //LDA #0
+            "8D 00 02"  //STA $0200
         );
     }
     if (strcmp(stoken, "p1Down") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 01 "    //AND #02
-            "4A "       //LSR
-            "49 01 "    //EOR #01
-            "85 01 02 " //STA $0201
+            "29 E0 "    //AND 11100000
+            "C9 00 "    //CMP 00000000
+            "D0 05 "    //BNE 05
+            "A9 01 "    //LDA #1
+            "18 "       //CLC
+            "90 02 "    //BCC 02
+            "A9 00 "    //LDA #0
+            "8D 00 02"  //STA $0201
         );
     }
     if (strcmp(stoken, "p1Left") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 04 "    //AND #04
-            "4A "       //LSR
-            "4A "       //LSR
-            "49 01 "    //EOR #01
-            "85 02 02 " //STA $0202
+            "29 E0 "    //AND 11100000
+            "C9 20 "    //CMP 00100000
+            "D0 05 "    //BNE 05
+            "A9 01 "    //LDA #1
+            "18 "       //CLC
+            "90 02 "    //BCC 02
+            "A9 00 "    //LDA #0
+            "8D 00 02"  //STA $0202
         );
     }
     if (strcmp(stoken, "p1Right") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 08 "    //AND #08
-            "4A "       //LSR
-            "4A "       //LSR
-            "4A "       //LSR
-            "49 01 "    //EOR #01
-            "85 02 03 " //STA $0203
+            "29 E0 "    //AND 11100000
+            "C9 40 "    //CMP 01000000
+            "D0 05 "    //BNE 05
+            "A9 01 "    //LDA #1
+            "18 "       //CLC
+            "90 02 "    //BCC 02
+            "A9 00 "    //LDA #0
+            "8D 00 02"  //STA $0203
         );
     }
 
@@ -568,39 +582,53 @@ int parseToken(char *token) {
     if (strcmp(stoken, "p2Up") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 10 "    //AND #16
-            "4A "       //LSR
-            "4A "       //LSR
-            "4A "       //LSR
-            "4A "       //LSR
-            "85 04 02"  //STA $0204
+            "29 07 "    //AND 00000111
+            "C9 00 "    //CMP 00000110
+            "D0 05 "    //BNE 05
+            "A9 01 "    //LDA #1
+            "18 "       //CLC
+            "90 02 "    //BCC 02
+            "A9 00 "    //LDA #0
+            "8D 00 02"  //STA $0204
         );
     }
     if (strcmp(stoken, "p2Down") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 20 "    //AND #32
-            "2A "       //ROL
-            "2A "       //ROL
-            "2A "       //ROL
-            "85 05 02"  //STA $0205
+            "29 07 "    //AND 00000111
+            "C9 00 "    //CMP 00000000
+            "D0 05 "    //BNE 05
+            "A9 01 "    //LDA #1
+            "18 "       //CLC
+            "90 02 "    //BCC 02
+            "A9 00 "    //LDA #0
+            "8D 00 02"  //STA $0205
         );
     }
     if (strcmp(stoken, "p2Left") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 40 "    //AND #64
-            "2A "       //ROL
-            "2A "       //ROL
-            "85 06 02"  //STA $0206
+            "29 07 "    //AND 00000111
+            "C9 02 "    //CMP 00000010
+            "D0 05 "    //BNE 05
+            "A9 01 "    //LDA #1
+            "18 "       //CLC
+            "90 02 "    //BCC 02
+            "A9 00 "    //LDA #0
+            "8D 00 02"  //STA $0206
         );
     }
     if (strcmp(stoken, "p2Right") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 80 "    //AND #128
-            "2A "       //ROL
-            "85 07 03"  //STA $0207
+            "29 07 "    //AND 00000111
+            "C9 04 "    //CMP 00000100
+            "D0 05 "    //BNE 05
+            "A9 01 "    //LDA #1
+            "18 "       //CLC
+            "90 02 "    //BCC 02
+            "A9 00 "    //LDA #0
+            "8D 00 02"  //STA $0207
         );
     }
 

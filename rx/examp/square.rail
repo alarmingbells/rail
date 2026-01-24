@@ -12,6 +12,8 @@ function switch;
 return press;
 
 main:
+    #init;
+    #clear;
     bindPress switch;
     while (true;);
         if (p1Up;);

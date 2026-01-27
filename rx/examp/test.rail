@@ -1,19 +1,11 @@
+function init:
+    var test 0;
+return 0;
+
+function onFire:
+    assign test 1;
+return fire;
+
 main:
-    var x 1;
-    var y 1;
-    while (true;);
-        setPx x y r;
-        sleep 255;
-        addto y 1;
-        setPx x y g;
-        sleep 255;
-        addto y 1;
-        setPx x y b;
-        sleep 255;
-        addto y 1;
-        if (y > 50;);
-            assign y 0;
-            addto x 1;
-        end;
-    end;
+    bindFire onFire;
 end;

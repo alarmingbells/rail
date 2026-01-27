@@ -529,7 +529,7 @@ int parseToken(char *token) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
             "29 E0 "    //AND 11100000
-            "C9 60 "    //CMP 01100000
+            "C9 70 "    //CMP 01100000
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
@@ -542,39 +542,39 @@ int parseToken(char *token) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
             "29 E0 "    //AND 11100000
-            "C9 00 "    //CMP 00000000
+            "C9 80 "    //CMP 10000000
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 00 02"  //STA $0201
+            "8D 01 02"  //STA $0201
         );
     }
     if (strcmp(stoken, "p1Left") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
             "29 E0 "    //AND 11100000
-            "C9 20 "    //CMP 00100000
+            "C9 A0 "    //CMP 10100000
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 00 02"  //STA $0202
+            "8D 02 02"  //STA $0202
         );
     }
     if (strcmp(stoken, "p1Right") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
             "29 E0 "    //AND 11100000
-            "C9 40 "    //CMP 01000000
+            "C9 C0 "    //CMP 11000000
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 00 02"  //STA $0203
+            "8D 03 02"  //STA $0203
         );
     }
 
@@ -582,53 +582,69 @@ int parseToken(char *token) {
     if (strcmp(stoken, "p2Up") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 07 "    //AND 00000111
-            "C9 00 "    //CMP 00000110
+            "29 07 "    //AND 00001110
+            "C9 08 "    //CMP 00000110
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 00 02"  //STA $0204
+            "8D 04 02"  //STA $0204
         );
     }
     if (strcmp(stoken, "p2Down") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 07 "    //AND 00000111
-            "C9 00 "    //CMP 00000000
+            "29 07 "    //AND 00001110
+            "C9 08 "    //CMP 00001000
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 00 02"  //STA $0205
+            "8D 05 02"  //STA $0205
         );
     }
     if (strcmp(stoken, "p2Left") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 07 "    //AND 00000111
-            "C9 02 "    //CMP 00000010
+            "29 07 "    //AND 00001110
+            "C9 0A "    //CMP 00001010
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 00 02"  //STA $0206
+            "8D 06 02"  //STA $0206
         );
     }
     if (strcmp(stoken, "p2Right") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 07 "    //AND 00000111
-            "C9 04 "    //CMP 00000100
+            "29 07 "    //AND 00001110
+            "C9 0C "    //CMP 00001100
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 00 02"  //STA $0207
+            "8D 07 02"  //STA $0207
+        );
+    }
+
+    if (strcmp(stoken, "p1Fire") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 10 "    //AND 00010000
+            "4A 4A 4A 4A "//LSR (x4)
+            "8D 08 02 "  //STA $0208
+        );
+    }
+    if (strcmp(stoken, "p2Fire") == 0) {
+        outputPos += sprintf(output + outputPos, 
+            "AD 00 80 " //LDA $8000 (controller register)
+            "29 01 "    //AND 00000001
+            "8D 09 02 "  //STA $0209
         );
     }
 
@@ -723,7 +739,7 @@ int parseToken(char *token) {
             } else if (strcmp(call, "setPx") == 0) {
             } else if (strcmp(call, "setBg") == 0) {
             } else if (strcmp(call, "sleep") == 0) {
-            } else if (strcmp(call, "bindPress") == 0) {
+            } else if (strcmp(call, "bindFire") == 0) {
                     pressDefined = true;
                     outputPos += sprintf(output + outputPos, "58 ");
             } else if (strcmp(call, "") == 0) {
@@ -789,7 +805,7 @@ int parseToken(char *token) {
             }
         } else if (strcmp(call, "return") == 0) {
             if (argCount == 1) {
-                if (strcmp(stoken, "press") != 0) {
+                if (strcmp(stoken, "fire") != 0) {
                     if (!isInt) {
                         int varIdx = findVariable(stoken);
                         if (varIdx == -1) {
@@ -1219,7 +1235,7 @@ int parseToken(char *token) {
                     , (buffer >> 8) & 0xFF,  buffer & 0xFF);
                 }
             }
-        } else if (strcmp(call, "bindPress") == 0) {
+        } else if (strcmp(call, "bindFire") == 0) {
             if (argCount == 1) {
                 int funcIdx = findFunc(stoken);
                 if (funcIdx != -1) {
@@ -1460,6 +1476,8 @@ int optimize() {
     char byte[2];
     int bytePos = 0;
 
+    int byteCount = 0;
+
     int outputSize = strlen(output);
 
     for (size_t c = 0; c < outputSize; c++) {
@@ -1469,6 +1487,7 @@ int optimize() {
             if (bytePos > 1) {
                 if (printopt) printf("%s ", byte);
                 bytePos = 0;
+                byteCount++;
 
                 static const char *opcodes[] = {
                     "69","65","75","6D","7D","79","61","71",
@@ -1484,6 +1503,10 @@ int optimize() {
                         found = true;
                         break;
                     }
+                }
+
+                if (byteCount+0xC000 == interruptAddr) {
+                    interruptAddr -= bytesRemoved;
                 }
 
                 if (strcmp(byte, "A9") == 0 && !isJumping) {
@@ -1550,6 +1573,9 @@ int compile(char *code) {
     addVariable("p2Down", false);
     addVariable("p2Left", false);
     addVariable("p2Right", false);
+
+    addVariable("p1Fire", false);
+    addVariable("p2Fire", false);
 
     char token[128];
     int tokenIdx = 0;
@@ -1749,8 +1775,8 @@ int compile(char *code) {
 
 int main() {
     printf("RailExperience Binary Creation Tool for Windows\n");
-    printf("Rail V1.3\n");
-    printf("Copyright (C) Innovation Incorporated 2025. All rights reserved.\n\n");
+    printf("Rail V1.4.0\n");
+    printf("Type '!help' for a list of commands\n\n");
     
     loadLibraries();
     while (true) {
@@ -1787,7 +1813,9 @@ int main() {
             filename[len - 1] = '\0';
         }
         if (filename[0] == '!') {
-            if (strcmp(filename, "!printout on") == 0) {
+            if (strcmp(filename, "!help") == 0) {
+                printf("\nRail 1.4.0 compiler commands:\n!printout (on/off) - Toggles output printing inside the compiler\n!printopt (on/off) - Toggles output printing pre optimization inside the compiler\n");
+            } else if (strcmp(filename, "!printout on") == 0) {
                 printout = true;
                 printf("\nPrint output enabled.\n");
             } else if (strcmp(filename, "!printout off") == 0) {

@@ -1774,7 +1774,7 @@ int compile(char *code) {
 }
 
 int main() {
-    printf("RailExperience Binary Creation Tool for Windows\n");
+    printf("Rail compiler for RX Rail Computer Gaming System\n");
     printf("Rail V1.4.0\n");
     printf("Type '!help' for a list of commands\n\n");
     

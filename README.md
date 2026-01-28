@@ -1,5 +1,3 @@
-Official Rail compiler for RX and RXLCDE systems
+Official Rail compiler for all RX systems
 
-RXLCDE compiler is no longer updated past Rail V1.0.
-
-I'm new to this whole compiler thing, don't mind if the code is a little funky
+RXLCD Compiler uses an older build of Rail 1.0.0, newer builds are only supported by RXCGS

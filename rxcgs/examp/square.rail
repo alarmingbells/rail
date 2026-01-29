@@ -9,12 +9,12 @@ function switch;
     if (color > 2;);
         assign color 0;
     end;
-return press;
+return fire;
 
 main:
     #init;
     #clear;
-    bindPress switch;
+    bindFire switch;
     while (true;);
         if (p1Up;);
             addto playerY 1;

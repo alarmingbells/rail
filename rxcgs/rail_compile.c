@@ -400,6 +400,9 @@ void loadLibraries() {
             char functionBuffer[32];
             char codeBuffer[512];
 
+            memset(functionBuffer, 0, sizeof(functionBuffer));
+            memset(codeBuffer, 0, sizeof(codeBuffer));
+
             for (int i = 0; i < size; i++) {
                 if (!inCode) {
                     if (content[i] == ':') {
@@ -535,7 +538,7 @@ int parseToken(char *token) {
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 00 02"  //STA $0200
+            "8D 00 02 "  //STA $0200
         );
     }
     if (strcmp(stoken, "p1Down") == 0) {
@@ -548,7 +551,7 @@ int parseToken(char *token) {
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 01 02"  //STA $0201
+            "8D 01 02 "  //STA $0201
         );
     }
     if (strcmp(stoken, "p1Left") == 0) {
@@ -561,7 +564,7 @@ int parseToken(char *token) {
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 02 02"  //STA $0202
+            "8D 02 02 "  //STA $0202
         );
     }
     if (strcmp(stoken, "p1Right") == 0) {
@@ -574,7 +577,7 @@ int parseToken(char *token) {
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 03 02"  //STA $0203
+            "8D 03 02 "  //STA $0203
         );
     }
 
@@ -589,7 +592,7 @@ int parseToken(char *token) {
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 04 02"  //STA $0204
+            "8D 04 02 "  //STA $0204
         );
     }
     if (strcmp(stoken, "p2Down") == 0) {
@@ -602,7 +605,7 @@ int parseToken(char *token) {
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 05 02"  //STA $0205
+            "8D 05 02 "  //STA $0205
         );
     }
     if (strcmp(stoken, "p2Left") == 0) {
@@ -615,7 +618,7 @@ int parseToken(char *token) {
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 06 02"  //STA $0206
+            "8D 06 02 "  //STA $0206
         );
     }
     if (strcmp(stoken, "p2Right") == 0) {
@@ -628,7 +631,7 @@ int parseToken(char *token) {
             "18 "       //CLC
             "90 02 "    //BCC 02
             "A9 00 "    //LDA #0
-            "8D 07 02"  //STA $0207
+            "8D 07 02 "  //STA $0207
         );
     }
 
@@ -1775,10 +1778,11 @@ int compile(char *code) {
 
 int main() {
     printf("Rail compiler for RX Rail Computer Gaming System\n");
-    printf("Rail V1.4.0\n");
+    printf("Rail V1.4.1\n");
     printf("Type '!help' for a list of commands\n\n");
     
     loadLibraries();
+    printf("%d library entries loaded successfully.\n", libFunctionCount);
     while (true) {
         newCall = true;
         call[32];

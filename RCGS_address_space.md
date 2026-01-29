@@ -17,6 +17,6 @@ RxRCGS
 0200 - 3FFF - Variables
 	0200 - 0209 - Controller buffers
 4000 - 7FFF - RailView frame buffer x2
-7FFF - BFFF - Controller register repeated
+8000 - BFFF - Controller register repeated
 C000 - FFFF - Cartridge
 

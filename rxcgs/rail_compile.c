@@ -1801,7 +1801,7 @@ int compile(char *code) {
 
 int main() {
     printf("Rail compiler for RX Rail Computer Gaming System\n");
-    printf("Rail V1.4.1\n");
+    printf("Rail V1.5.0\n");
     printf("Type '!help' for a list of commands\n\n");
     
     loadLibraries();

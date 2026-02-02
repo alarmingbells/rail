@@ -7,6 +7,7 @@ module video_top
         input             I_clk           ,
         input             I_rst           ,
         input             I_key           ,
+        output            INTERRUPT       ,
         output            running         ,
         output            O_tmds_clk_p    ,
         output            O_tmds_clk_n    ,
@@ -18,6 +19,8 @@ module video_top
     wire [1:0] pixel_colour;
 
     wire [1:0] palette;
+
+    wire vblank_clear;
 
     wire [23:0] bgcolour;
 
@@ -110,6 +113,7 @@ module video_top
         .O_data_b    (tp0_data_b         ),
         .pixel_colour(pixel_colour),
         .pixel_address(pixel_address),
+        .vblank_clear(vblank_clear),
         .bgcolour(bgcolour),
         .palette(palette)
     );
@@ -121,7 +125,9 @@ module video_top
         .colour(COLOUR),
         .IE(IE),
         .dataOut(pixel_colour),
-        .bgcolour(bgcolour)
+        .bgcolour(bgcolour),
+        .vblank_clear(vblank_clear),
+        .interrupt(INTERRUPT)
     );
 
     palette_sw sw1 (

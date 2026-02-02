@@ -20,6 +20,7 @@ bool inFunc = false;
 bool inNest = false;
 bool isFunc = false;
 bool pressDefined = false;
+bool frameDefined = false;
 
 int intValue = 0;
 bool isInt = false;
@@ -36,6 +37,7 @@ char funcCallBuffer[32];
 int whileJmpAddr = 0;
 
 int interruptAddr = START_ADDR;
+int frameAddr = START_ADDR;
 int funcReturnAddr = START_ADDR-3;
 int mainAddr = 0x3;
 
@@ -532,7 +534,7 @@ int parseToken(char *token) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
             "29 E0 "    //AND 11100000
-            "C9 70 "    //CMP 01100000
+            "C9 60 "    //CMP 01100000
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
@@ -585,7 +587,7 @@ int parseToken(char *token) {
     if (strcmp(stoken, "p2Up") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 07 "    //AND 00001110
+            "29 06 "    //AND 00001110
             "C9 08 "    //CMP 00000110
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
@@ -743,9 +745,10 @@ int parseToken(char *token) {
             } else if (strcmp(call, "setBg") == 0) {
             } else if (strcmp(call, "sleep") == 0) {
             } else if (strcmp(call, "bindFire") == 0) {
-                    pressDefined = true;
-                    outputPos += sprintf(output + outputPos, "58 ");
-            } else if (strcmp(call, "") == 0) {
+                pressDefined = true;
+                outputPos += sprintf(output + outputPos, "58 ");
+            } else if (strcmp(call, "bindFrame") == 0) {
+                frameDefined = true;
             } else if (findVariable(call) != -1) {
                 int varIdx = findVariable(call);
                 int VAddress = vars[varIdx].address;
@@ -802,6 +805,7 @@ int parseToken(char *token) {
         if (strcmp(call, "function") == 0) {
             if (argCount == 1) {
                 addFunc(stoken);
+                outputPos += sprintf(output + outputPos, "85 04 86 05 84 06 ");
             } else {
                 throw(5, stoken);
                 return -1;
@@ -809,21 +813,25 @@ int parseToken(char *token) {
         } else if (strcmp(call, "return") == 0) {
             if (argCount == 1) {
                 if (strcmp(stoken, "fire") != 0) {
-                    if (!isInt) {
-                        int varIdx = findVariable(stoken);
-                        if (varIdx == -1) {
-                            throw(1, stoken);
-                            return -1;
+                    if (strcmp(stoken, "frame") != 0) {
+                        if (!isInt) {
+                            int varIdx = findVariable(stoken);
+                            if (varIdx == -1) {
+                                throw(1, stoken);
+                                return -1;
+                            } else {
+                                outputPos += sprintf(output + outputPos, "AD %02X %02X ", vars[varIdx].address & 0xFF, (vars[varIdx].address >> 8) & 0xFF);
+                            }
                         } else {
-                            outputPos += sprintf(output + outputPos, "AD %02X %02X ", vars[varIdx].address & 0xFF, (vars[varIdx].address >> 8) & 0xFF);
+                            outputPos += sprintf(output + outputPos, "A9 %02X ", strtol(stoken, NULL, 10) & 0xFF);
                         }
-                    } else {
-                        outputPos += sprintf(output + outputPos, "A9 %02X ", strtol(stoken, NULL, 10) & 0xFF);
-                    }
 
-                    outputPos += sprintf(output + outputPos, "60 ");
+                        outputPos += sprintf(output + outputPos, "60 ");
+                    } else {
+                        outputPos += sprintf(output + outputPos, "A5 04 A6 05 A4 06 40 ");
+                    }
                 } else {
-                    outputPos += sprintf(output + outputPos, "40 ");
+                    outputPos += sprintf(output + outputPos, "A5 04 A6 05 A4 06 40 ");
                 }
                 inFunc = false;
             } else {
@@ -1249,6 +1257,17 @@ int parseToken(char *token) {
                     return -1;
                 }
             }
+        } else if (strcmp(call, "bindFrame") == 0) {
+            if (argCount == 1) {
+                int funcIdx = findFunc(stoken);
+                if (funcIdx != -1) {
+                    int addr = funcs[funcIdx].address;
+                    frameAddr = addr;
+                } else {
+                    throw(1, stoken);
+                    return -1;
+                }
+            }
         } else if (findVariable(call) != -1 || findArray(call) != -1) {
             bool isArray = false;
             if (findArray(call) != -1) {
@@ -1510,6 +1529,10 @@ int optimize() {
 
                 if (byteCount+0xC000 == interruptAddr) {
                     interruptAddr -= bytesRemoved;
+                }
+
+                if (byteCount+0xC000 == frameAddr) {
+                    frameAddr -= bytesRemoved;
                 }
 
                 if (strcmp(byte, "A9") == 0 && !isJumping) {
@@ -1899,6 +1922,9 @@ int main() {
 
                     bytes[0x7FFE] = interruptAddr & 0xFF;
                     bytes[0x7FFF] = (interruptAddr >> 8) & 0xFF;
+
+                    bytes[0x7FFA] = frameAddr & 0xFF;
+                    bytes[0x7FFB] = (frameAddr >> 8) & 0xFF;
 
                     fwrite(bytes, 1, 32768, binary);
                     fclose(binary);

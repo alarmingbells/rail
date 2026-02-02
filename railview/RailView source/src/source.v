@@ -4,8 +4,10 @@ module frame_buffer (input clk,
                     input [12:0] addr_internal,
                     input [1:0] colour,
                     input IE,
+                    input vblank_clear,
                     output reg [1:0] dataOut,
-                    output reg [23:0] bgcolour);
+                    output reg [23:0] bgcolour,
+                    output reg interrupt);
     reg [1:0] buffer [0:8191];
     reg writing;
     reg [2:0] delayClocks;
@@ -14,6 +16,14 @@ module frame_buffer (input clk,
     reg [12:0] addressLatch;
     reg [1:0] datap0;
     reg [1:0] datap1;
+
+    reg [1:0] dataw;
+    reg [12:0] addrw;
+    reg wf;
+
+    reg clearing;
+    reg [12:0] clearAddr;
+    reg [5:0] interrupt_time;
 
     wire ieFall = IEp1 & ~IEp0;
     wire ieRise = ~IEp1 & IEp0;
@@ -32,16 +42,44 @@ module frame_buffer (input clk,
                 addressLatch <= address;
             end
         end
-        if (ieRise) begin
+        if (ieRise && !clearing) begin
             delayClocks <= 3'h6;
             writing <= 1'b0;
-            buffer[addressLatch] <= datap1;
+            dataw <= datap1;
+            addrw <= addressLatch;
+            wf <= 1'b1;
+        end
+
+        if (clearing) begin
+            addrw <= clearAddr;
+            dataw <= 2'd0;
+            wf <= 1'b1;
+            clearAddr <= clearAddr + 13'd1;
+            if (clearAddr == 13'd8101) begin
+                clearing <= 1'b0;
+                interrupt_time <= 6'd54;
+            end
+        end
+
+        if (wf) begin
+            buffer[addrw] <= dataw;
         end
         
         if (writing) begin
             datap0 <= colour;
             datap1 <= datap0;
         end
+
+        if (!vblank_clear) begin
+            clearing <= 1'b1;
+            clearAddr <= 13'd0;
+        end
+
+        if (interrupt_time != 6'd0) begin
+            interrupt <= 1'b0;
+            interrupt_time <= interrupt_time - 5'd1;
+        end else 
+            interrupt <= 1'b1;
 
         bgcolour[7:0] <= {buffer[13'h1FFF], buffer[13'h1FFE], buffer[13'h1FFD], buffer[13'h1FFC]};
         bgcolour[15:8] <= {buffer[13'h1FFB], buffer[13'h1FFA], buffer[13'h1FF9], buffer[13'h1FF8]};

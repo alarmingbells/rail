@@ -13,6 +13,7 @@ RxRCGS
 	0000 - 0001 - Indirect address buffer
 	0002 - Math library buffer
 	0003 - Double sleep buffer
+	0004 - 0006 - Function register buffers
 0100 - 01FF - Hardware stack
 0200 - 3FFF - Variables
 	0200 - 0209 - Controller buffers

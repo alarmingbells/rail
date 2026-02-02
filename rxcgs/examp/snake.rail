@@ -43,7 +43,7 @@ main;
     #init;
     #clear;
     setBg 20 120 20;
-    while (1;);
+    while (true;);
         if (p1Right == 1;);
             assign direction 0;
         end; 

@@ -32,7 +32,7 @@ module key_led_ctrl (
           press_cnt <= 3'd4;     
         end
         else begin
-          press_cnt <= press_cnt + 1;
+          press_cnt <= press_cnt + 3'd1;
         end
       end
       else begin
@@ -42,7 +42,7 @@ module key_led_ctrl (
           press_cnt <= 3'd1;     
         end
         else begin
-          press_cnt <= press_cnt - 1;
+          press_cnt <= press_cnt - 3'd1;
         end
       end
     end

@@ -1,9 +1,9 @@
--d C:\Users\funlu\Desktop\rail\railview\sipeed TangNano-20K-example main hdmi\impl\gwsynthesis\hdmi.vg
+-d C:\Users\funlu\Desktop\rail\railview\RailView source\impl\gwsynthesis\hdmi.vg
 -p GW2AR-18C-QFN88-8
 -pn GW2AR-LV18QN88C8/I7
--cst C:\Users\funlu\Desktop\rail\railview\sipeed TangNano-20K-example main hdmi\src\hdmi.cst
--cfg C:\Users\funlu\Desktop\rail\railview\sipeed TangNano-20K-example main hdmi\impl\pnr\device.cfg
--sdc C:\Users\funlu\Desktop\rail\railview\sipeed TangNano-20K-example main hdmi\src\nano_20k_video.sdc
+-cst C:\Users\funlu\Desktop\rail\railview\RailView source\src\hdmi.cst
+-cfg C:\Users\funlu\Desktop\rail\railview\RailView source\impl\pnr\device.cfg
+-sdc C:\Users\funlu\Desktop\rail\railview\RailView source\src\nano_20k_video.sdc
 -bit
 -tr
 -ph

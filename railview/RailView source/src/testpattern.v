@@ -25,6 +25,7 @@ module testpattern
 
 		input [1:0] pixel_colour,
 		output reg [12:0] pixel_address,
+		output reg vblank_clear,
 		input [23:0] bgcolour,
 		input [1:0] palette
 	); 
@@ -146,6 +147,18 @@ module testpattern
 	assign De_pos	= !Pout_de_dn[1] & Pout_de_dn[0]; //de rising edge
 	assign De_neg	= Pout_de_dn[1] && !Pout_de_dn[0];//de falling edge
 	assign Vs_pos	= !Pout_vs_dn[1] && Pout_vs_dn[0];//vs rising edge
+
+	always @(posedge I_pxl_clk or negedge I_rst_n) begin
+		if (!I_rst_n) begin
+			vblank_clear <= 1'b0;
+		end else begin
+			vblank_clear <= 1'b0;
+
+			if (Vs_pos) begin
+				vblank_clear <= 1'b1;
+			end
+		end
+	end
 
 	always @(posedge I_pxl_clk or negedge I_rst_n)
     begin

@@ -1,7 +1,7 @@
 function init;
     var x 45;
     var y 45;
-end;
+return 0;
 
 function onFrame;
     setPx y x g;
@@ -13,19 +13,19 @@ main:
     while (true;);
         if (p1Up;);
             subfrom y 1;
-            sleep 255;
+            sleep 50;
         end;
         if (p1Right;);
             addto x 1;
-            sleep 255;
+            sleep 50;
         end;
         if (p1Down;);
             addto y 1;
-            sleep 255;
+            sleep 50;
         end;
         if (p1Left;);
             subfrom x 1;
-            sleep 255;
+            sleep 50;
         end;
     end;
 end;

@@ -152,11 +152,11 @@ module testpattern
 		if (!I_rst_n) begin
 			vblank_clear <= 1'b0;
 		end else begin
-			vblank_clear <= 1'b0;
-
 			if (Vs_pos) begin
 				vblank_clear <= 1'b1;
-			end
+			end else begin
+                vblank_clear <= 1'b0;
+            end
 		end
 	end
 

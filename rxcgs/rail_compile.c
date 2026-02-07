@@ -444,6 +444,9 @@ void loadLibraries() {
 }
 
 int parseToken(char *token) {
+    //printf("%s\n", output);
+    //printf("%s\n", token);
+
     if (outputPos/3 > 0x3FF0) {
         throw(3, 0);
         return -1;
@@ -1519,11 +1522,9 @@ int optimize() {
                     "09","05","15","0D","1D","19","01","11",
                     "49","45","55","4D","5D","59","41","51"
                 };
-                bool found = false;
                 for (size_t i = 0; i < sizeof(opcodes)/sizeof(opcodes[0]); i++) {
                     if (strcmp(byte, opcodes[i]) == 0) {
-                        found = true;
-                        break;
+                        AValue = -1;
                     }
                 }
 
@@ -1540,9 +1541,7 @@ int optimize() {
                     loadBytesLeft = 1;
                 } else if (strcmp(byte, "4C") == 0) {
                     isJumping = true;
-                    jumpBytesLeft = 2;
-                } else if (found) {
-                    AValue = -1;            
+                    jumpBytesLeft = 2;        
                 } else if (isJumping) {
                     if (jumpBytesLeft == 2) {
                         oldAddrBuffer = (int)strtol(byte, NULL, 16);
@@ -1801,7 +1800,7 @@ int compile(char *code) {
 
 int main() {
     printf("Rail compiler for RX Rail Computer Gaming System\n");
-    printf("Rail V1.5.0\n");
+    printf("Rail V1.5.1\n");
     printf("Type '!help' for a list of commands\n\n");
     
     loadLibraries();

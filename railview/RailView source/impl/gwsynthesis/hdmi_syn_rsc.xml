@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Module name="video_top" Register="25" Lut="60" T_Register="355(25)" T_Alu="87(0)" T_Lut="583(60)" T_MULTADDALU18X18="1(0)" T_Bsram="1(0)">
- <SubModule name="testpattern_inst" Register="128" Alu="6" Lut="200" MULTADDALU18X18="1" T_Register="128(128)" T_Alu="6(6)" T_Lut="200(200)" T_MULTADDALU18X18="1(1)"/>
- <SubModule name="fb" Register="107" Alu="12" Lut="54" Bsram="1" T_Register="107(107)" T_Alu="12(12)" T_Lut="54(54)" T_Bsram="1(1)"/>
- <SubModule name="sw1" Register="22" Lut="40" T_Register="22(22)" T_Lut="40(40)"/>
+<Module name="video_top" Register="25" Lut="57" T_Register="359(25)" T_Alu="88(0)" T_Lut="579(57)" T_MULTADDALU18X18="1(0)" T_Bsram="1(0)">
+ <SubModule name="testpattern_inst" Register="128" Alu="6" Lut="195" MULTADDALU18X18="1" T_Register="128(128)" T_Alu="6(6)" T_Lut="195(195)" T_MULTADDALU18X18="1(1)"/>
+ <SubModule name="fb" Register="111" Alu="13" Lut="56" Bsram="1" T_Register="111(111)" T_Alu="13(13)" T_Lut="56(56)" T_Bsram="1(1)"/>
+ <SubModule name="sw1" Register="22" Lut="42" T_Register="22(22)" T_Lut="42(42)"/>
  <SubModule name="u_tmds_rpll"/>
  <SubModule name="DVI_TX_Top_inst" Register="73" Alu="69" Lut="229" T_Register="73(73)" T_Alu="69(69)" T_Lut="229(229)"/>
 </Module>

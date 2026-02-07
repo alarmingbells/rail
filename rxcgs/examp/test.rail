@@ -1,5 +1,14 @@
 function onframe;
-    setPx 45 45;
+    #print0 0;
+    #print1 5;
+    #print2 10;
+    #print3 15;
+    #print4 20;
+    #print5 25;
+    #print6 30;
+    #print7 35;
+    #print8 40;
+    #print9 45;
 return frame;
 
 main:

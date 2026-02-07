@@ -20,7 +20,7 @@
     "InstLine" : 121,
     "InstName" : "fb",
     "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/source.v",
-    "ModuleLine" : 2,
+    "ModuleLine" : 1,
     "ModuleName" : "frame_buffer"
    },
    {
@@ -28,7 +28,7 @@
     "InstLine" : 133,
     "InstName" : "sw1",
     "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/source.v",
-    "ModuleLine" : 92,
+    "ModuleLine" : 105,
     "ModuleName" : "palette_sw"
    },
    {

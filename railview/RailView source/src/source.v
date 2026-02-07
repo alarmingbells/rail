@@ -1,4 +1,3 @@
-
 module frame_buffer (input clk,
                     input [12:0] address,
                     input [12:0] addr_internal,
@@ -22,15 +21,29 @@ module frame_buffer (input clk,
     reg wf;
 
     reg clearing;
-    reg [12:0] clearAddr;
+    reg [13:0] clearAddr;
     reg [5:0] interrupt_time;
 
     wire ieFall = IEp1 & ~IEp0;
     wire ieRise = ~IEp1 & IEp0;
+    
+    reg VBp0;
+    reg VBp1;
+    wire VBRise;
+
+    always @(posedge clk) begin
+        VBp0 <= vblank_clear;
+        VBp1 <= VBp0;
+    end
+
+    assign VBRise = ~VBp1 & VBp0;
+    
 
     always @(posedge clk) begin
         IEp0 <= IE;
         IEp1 <= IEp0;
+    
+        wf <= 1'b0;
 
         if (delayClocks > 3'h0) begin
             delayClocks <= delayClocks - 3'h1;
@@ -54,8 +67,8 @@ module frame_buffer (input clk,
             addrw <= clearAddr;
             dataw <= 2'd0;
             wf <= 1'b1;
-            clearAddr <= clearAddr + 13'd1;
-            if (clearAddr == 13'd8101) begin
+            clearAddr <= clearAddr + 14'd1;
+            if (clearAddr >= 14'd8191) begin
                 clearing <= 1'b0;
                 interrupt_time <= 6'd54;
             end
@@ -70,14 +83,14 @@ module frame_buffer (input clk,
             datap1 <= datap0;
         end
 
-        if (!vblank_clear) begin
+        if (VBRise) begin
             clearing <= 1'b1;
             clearAddr <= 13'd0;
         end
 
         if (interrupt_time != 6'd0) begin
             interrupt <= 1'b0;
-            interrupt_time <= interrupt_time - 5'd1;
+            interrupt_time <= interrupt_time - 6'd1;
         end else 
             interrupt <= 1'b1;
 

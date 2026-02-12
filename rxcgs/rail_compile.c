@@ -9,6 +9,7 @@
 
 bool printout = false;
 bool printopt = false;
+bool opt = true;
 
 bool newCall = true;
 char call[32];
@@ -1800,7 +1801,7 @@ int compile(char *code) {
 
 int main() {
     printf("Rail compiler for RX Rail Computer Gaming System\n");
-    printf("Rail V1.5.1\n");
+    printf("Rail V1.5.2\n");
     printf("Type '!help' for a list of commands\n\n");
     
     loadLibraries();
@@ -1840,7 +1841,7 @@ int main() {
         }
         if (filename[0] == '!') {
             if (strcmp(filename, "!help") == 0) {
-                printf("\nRail 1.4.0 compiler commands:\n!printout (on/off) - Toggles output printing inside the compiler\n!printopt (on/off) - Toggles output printing pre optimization inside the compiler\n");
+                printf("\nRail 1.5.2 compiler commands:\n!printout (on/off) - Toggles output printing inside the compiler\n!printopt (on/off) - Toggles output printing pre optimization inside the compiler\n!optimize (on/off) - Toggles redundant load optimization\n");
             } else if (strcmp(filename, "!printout on") == 0) {
                 printout = true;
                 printf("\nPrint output enabled.\n");
@@ -1853,6 +1854,12 @@ int main() {
             } else if (strcmp(filename, "!printopt off") == 0) {
                 printopt = false;
                 printf("\nPrint optimization disabled.\n");
+            } else if (strcmp(filename, "!optimize on") == 0) {
+                opt = true;
+                printf("\nOptimization enabled.\n");
+            } else if (strcmp(filename, "!optimize off") == 0) {
+                opt = false;
+                printf("\nOptimization disabled.\n");
             } else {
                 printf("\n\033[31m'%s' is not a valid command.\033[0m\n", filename);
             }
@@ -1879,7 +1886,7 @@ int main() {
                 int sucess = compile(content);
                 
                 if (sucess == 0) {
-                    optimize();                    
+                    if (opt) optimize();      
                     char compFileName[32];
                     for (int i = 0; i < strlen(filename); i++) {
                         if (filename[i] == '.') {

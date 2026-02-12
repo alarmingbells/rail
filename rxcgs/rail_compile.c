@@ -9,7 +9,7 @@
 
 bool printout = false;
 bool printopt = false;
-bool opt = true;
+bool opt = false;
 
 bool newCall = true;
 char call[32];
@@ -1841,7 +1841,7 @@ int main() {
         }
         if (filename[0] == '!') {
             if (strcmp(filename, "!help") == 0) {
-                printf("\nRail 1.5.2 compiler commands:\n!printout (on/off) - Toggles output printing inside the compiler\n!printopt (on/off) - Toggles output printing pre optimization inside the compiler\n!optimize (on/off) - Toggles redundant load optimization\n");
+                printf("\nRail 1.5.2 compiler commands:\n!printout (on/off) - Toggles output printing inside the compiler\n!printopt (on/off) - Toggles output printing pre-optimization inside the compiler\n!optimize (on/off) - Toggles redundant load optimization\n");
             } else if (strcmp(filename, "!printout on") == 0) {
                 printout = true;
                 printf("\nPrint output enabled.\n");
@@ -1856,6 +1856,7 @@ int main() {
                 printf("\nPrint optimization disabled.\n");
             } else if (strcmp(filename, "!optimize on") == 0) {
                 opt = true;
+                 printf("\033[33m\nWarning: Optimization is still an experimental feature and may cause undefined behavior. Enable only for testing.\033[0m\n");
                 printf("\nOptimization enabled.\n");
             } else if (strcmp(filename, "!optimize off") == 0) {
                 opt = false;

@@ -15,8 +15,8 @@ WARN  (EX3671) : Second declaration of 'KEY_sync' is ignored("C:\Users\funlu\Des
 Compiling module 'video_top'("C:\Users\funlu\Desktop\rail\railview\RailView source\src\video_top.v":1)
 Compiling module 'testpattern'("C:\Users\funlu\Desktop\rail\railview\RailView source\src\testpattern.v":1)
 Compiling module 'frame_buffer'("C:\Users\funlu\Desktop\rail\railview\RailView source\src\source.v":1)
-WARN  (EX3791) : Expression size 14 truncated to fit in target size 13("C:\Users\funlu\Desktop\rail\railview\RailView source\src\source.v":67)
-Compiling module 'palette_sw'("C:\Users\funlu\Desktop\rail\railview\RailView source\src\source.v":105)
+WARN  (EX3791) : Expression size 14 truncated to fit in target size 13("C:\Users\funlu\Desktop\rail\railview\RailView source\src\source.v":77)
+Compiling module 'palette_sw'("C:\Users\funlu\Desktop\rail\railview\RailView source\src\source.v":118)
 Compiling module 'TMDS_rPLL'("C:\Users\funlu\Desktop\rail\railview\RailView source\src\gowin_rpll\TMDS_rPLL.v":9)
 Compiling module 'DVI_TX_Top'("C:\Users\funlu\Desktop\rail\railview\RailView source\src\dvi_tx\dvi_tx.v":1072)
 Compiling module '**'("C:\Users\funlu\Desktop\rail\railview\RailView source\src\dvi_tx\dvi_tx.v":1071)
@@ -39,7 +39,7 @@ Running technical mapping ...
 [75%] Tech-Mapping Phase 2 completed
 [80%] Tech-Mapping Phase 3 completed
 [90%] Tech-Mapping Phase 4 completed
-WARN  (NL0002) : The module "key_led_ctrl" instantiated to "key_led_ctrl_inst" is swept in optimizing("C:\Users\funlu\Desktop\rail\railview\RailView source\src\video_top.v":190)
+WARN  (NL0002) : The module "key_led_ctrl" instantiated to "key_led_ctrl_inst" is swept in optimizing("C:\Users\funlu\Desktop\rail\railview\RailView source\src\video_top.v":191)
 [95%] Generate netlist file "C:\Users\funlu\Desktop\rail\railview\RailView source\impl\gwsynthesis\hdmi.vg" completed
 [100%] Generate report file "C:\Users\funlu\Desktop\rail\railview\RailView source\impl\gwsynthesis\hdmi_syn.rpt.html" completed
 GowinSynthesis finish

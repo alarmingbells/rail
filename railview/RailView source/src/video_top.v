@@ -127,7 +127,8 @@ module video_top
         .dataOut(pixel_colour),
         .bgcolour(bgcolour),
         .vblank_clear(vblank_clear),
-        .interrupt(INTERRUPT)
+        .interrupt(INTERRUPT),
+        .I_rst_n(hdmi4_rst_n)
     );
 
     palette_sw sw1 (

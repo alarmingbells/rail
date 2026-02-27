@@ -25,15 +25,15 @@
    },
    {
     "InstFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/video_top.v",
-    "InstLine" : 133,
+    "InstLine" : 134,
     "InstName" : "sw1",
     "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/source.v",
-    "ModuleLine" : 105,
+    "ModuleLine" : 118,
     "ModuleName" : "palette_sw"
    },
    {
     "InstFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/video_top.v",
-    "InstLine" : 151,
+    "InstLine" : 152,
     "InstName" : "u_tmds_rpll",
     "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/gowin_rpll/TMDS_rPLL.v",
     "ModuleLine" : 9,
@@ -41,7 +41,7 @@
    },
    {
     "InstFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/video_top.v",
-    "InstLine" : 168,
+    "InstLine" : 169,
     "InstName" : "DVI_TX_Top_inst",
     "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/dvi_tx/dvi_tx.v",
     "ModuleLine" : 1072,
@@ -59,7 +59,7 @@
    },
    {
     "InstFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/video_top.v",
-    "InstLine" : 185,
+    "InstLine" : 186,
     "InstName" : "key_led_ctrl_inst",
     "ModuleFile" : "C:/Users/funlu/Desktop/rail/railview/RailView source/src/key_led_ctrl.v",
     "ModuleLine" : 1,

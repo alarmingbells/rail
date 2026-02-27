@@ -149,16 +149,12 @@ module testpattern
 	assign Vs_pos	= !Pout_vs_dn[1] && Pout_vs_dn[0];//vs rising edge
 
 	always @(posedge I_pxl_clk or negedge I_rst_n) begin
-		if (!I_rst_n) begin
-			vblank_clear <= 1'b0;
-		end else begin
-			if (Vs_pos) begin
-				vblank_clear <= 1'b1;
-			end else begin
-                vblank_clear <= 1'b0;
-            end
-		end
-	end
+        if (!I_rst_n) begin
+            vblank_clear <= 1'b0;
+        end else begin
+            vblank_clear <= (V_cnt < (I_v_sync + I_v_bporch));
+        end
+    end
 
 	always @(posedge I_pxl_clk or negedge I_rst_n)
     begin

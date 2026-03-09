@@ -1155,7 +1155,7 @@ int parseToken(char *token) {
                         "A0 00 "        //LDY #00
                         "A9 %02X "      //LDA colour
                         "91 00 ",       //STA
-                        buffer & 0xFF, (buffer >> 8) & 0xFF, buffer2 & 0xFF, (buffer2 >> 8) & 0xFF, buffer3 & 0xFF);
+                        buffer2 & 0xFF, (buffer2 >> 8) & 0xFF, buffer & 0xFF, (buffer >> 8) & 0xFF, buffer3 & 0xFF);
                 }
             }
         
@@ -1801,7 +1801,7 @@ int compile(char *code) {
 
 int main() {
     printf("Rail compiler for RX Rail Computer Gaming System\n");
-    printf("Rail V1.5.2\n");
+    printf("Rail V1.5.3\n");
     printf("Type '!help' for a list of commands\n\n");
     
     loadLibraries();

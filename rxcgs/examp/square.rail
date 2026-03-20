@@ -204,7 +204,7 @@ main:
         if (score == 10;);
             #reset;
         end;
-        sleep 25;
+        //sleep 25;
         if (pdx == 1;);
             assign px (px + pmh;);
         end;

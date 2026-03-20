@@ -1,0 +1,82 @@
+function init;
+    var puckx 45;
+    var pucky 45;
+    var puckmx 0;
+    var puckmy 0;
+    var puckdx 0;
+    var puckdy 0;
+
+    var p1x 30;
+    var p1y 45;
+
+    var p2x 60;
+    var p2y 45;
+return 0;
+
+function render;
+    setBg 234 232 185;
+    if (puckdx == 0;);
+        assign puckx (puckx - puckmx;);
+    end;
+    if (puckdy == 0;);
+        assign pucky (pucky - puckmy;);
+    end;
+    if (puckdx == 1;);
+        assign puckx (puckx + puckmx;);
+    end;
+    if (puckdy == 1;);
+        assign pucky (pucky + puckmy;);
+    end;
+
+    if (p1Up;);
+        addto p1y 1;
+    end;
+    if (p1Down;);
+        subfrom p1y 1;
+    end;
+    if (p1Right;);
+        addto p1x 1;
+    end;
+    if (p1Left;);
+        subfrom p1x 1;
+    end;
+    if (p2Up;);
+        addto p2y 1;
+    end;
+    if (p2Down;);
+        subfrom p2y 1;
+    end;
+    if (p2Right;);
+        addto p2x 1;
+    end;
+    if (p2Left;);
+        subfrom p2x 1;
+    end;
+
+    setPx puckx pucky b;
+    
+    setPx p1x p1y r;
+    addto p1x 1;
+    setPx p1x p1y r;
+    addto p1y 1;
+    setPx p1x p1y r;
+    subfrom p1x 1;
+    setPx p1x p1y r;
+    subfrom p1y 1;
+
+    setPx p2x p2y g;
+    addto p2x 1;
+    setPx p2x p2y g;
+    addto p2y 1;
+    setPx p2x p2y g;
+    subfrom p2x 1;
+    setPx p2x p2y g;
+    subfrom p2y 1;
+return frame;
+
+main:
+    #init;
+    bindFrame render;
+    while (true;);
+    end;
+end;

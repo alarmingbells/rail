@@ -591,8 +591,8 @@ int parseToken(char *token) {
     if (strcmp(stoken, "p2Up") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 06 "    //AND 00001110
-            "C9 08 "    //CMP 00000110
+            "29 0E "    //AND 00001110
+            "C9 06 "    //CMP 00000110
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
             "18 "       //CLC
@@ -604,7 +604,7 @@ int parseToken(char *token) {
     if (strcmp(stoken, "p2Down") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 07 "    //AND 00001110
+            "29 0E "    //AND 00001110
             "C9 08 "    //CMP 00001000
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
@@ -617,7 +617,7 @@ int parseToken(char *token) {
     if (strcmp(stoken, "p2Left") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 07 "    //AND 00001110
+            "29 0E "    //AND 00001110
             "C9 0A "    //CMP 00001010
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
@@ -630,7 +630,7 @@ int parseToken(char *token) {
     if (strcmp(stoken, "p2Right") == 0) {
         outputPos += sprintf(output + outputPos, 
             "AD 00 80 " //LDA $8000 (controller register)
-            "29 07 "    //AND 00001110
+            "29 0E "    //AND 00001110
             "C9 0C "    //CMP 00001100
             "D0 05 "    //BNE 05
             "A9 01 "    //LDA #1
@@ -1180,13 +1180,13 @@ int parseToken(char *token) {
                 }
                 outputPos += sprintf(output + outputPos,
                     "A9 %02X "      //LDA buffer 00000011
-                    "8D F3 5F "     //STA 4000 + 1FF4
+                    "8D F4 5F "     //STA 4000 + 1FF4
                     "A9 %02X "      //LDA buffer 00001100
-                    "8D F4 5F "     //STA 4000 + 1FF5
+                    "8D F5 5F "     //STA 4000 + 1FF5
                     "A9 %02X "      //LDA buffer 00110000
-                    "8D F5 5F "     //STA 4000 + 1FF6
+                    "8D F6 5F "     //STA 4000 + 1FF6
                     "A9 %02X "      //LDA buffer 11000000
-                    "8D F6 5F "     //STA 4000 + 1FF7
+                    "8D F7 5F "     //STA 4000 + 1FF7
 
                     "A9 %02X "      //LDA buffer2 00000011
                     "8D F8 5F "     //STA 4000 + 1FF8
@@ -1801,7 +1801,7 @@ int compile(char *code) {
 
 int main() {
     printf("Rail compiler for RX Rail Computer Gaming System\n");
-    printf("Rail V1.5.3\n");
+    printf("Rail V1.5.4\n");
     printf("Type '!help' for a list of commands\n\n");
     
     loadLibraries();
